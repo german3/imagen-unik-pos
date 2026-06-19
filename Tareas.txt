@@ -1,0 +1,15 @@
+Generar venta.
+Escribir cliente.
+corregir logo. ******
+corte de caja.
+la utilidad sea automatica y no guardar a mano.
+listado de productos crud
+listado de clientes y crud.
+sku automatico.
+ajustar los campos de registrar productos y clientes.
+botón de ventas ajustarlo
+colorear botón de ver e imprimir a verde.
+ver historial de ventas.
+
+
+

@@ -1,0 +1,12 @@
+# Ignorar archivos que no deben ir al contenedor Docker
+*.xlsx
+*.docx
+*.txt
+*.tmp
+~$*
+.git
+.gitignore
+*.png
+*.jpeg
+*.jpg
+node_modules

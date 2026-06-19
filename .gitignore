@@ -1,0 +1,9 @@
+# Archivos y carpetas a ignorar en el repositorio de GitHub
+*.xlsx
+*.docx
+~$*
+*.tmp
+.env
+Logo.jpeg
+WhatsApp*
+cotizacion*.png
