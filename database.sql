@@ -1,5 +1,8 @@
-CREATE DATABASE IF NOT EXISTS imagen_unik_pos DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE imagen_unik_pos;
+-- NOTA PARA BASES DE DATOS EN LA NUBE (ej. FreeSQLDatabase, db4free, etc.):
+-- En plataformas gratuitas de MySQL, la base de datos ya viene creada.
+-- Si usas una de ellas, NO ejecutes las siguientes dos líneas (o coméntalas):
+-- CREATE DATABASE IF NOT EXISTS imagen_unik_pos DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE imagen_unik_pos;
 
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -56,5 +59,30 @@ CREATE TABLE IF NOT EXISTS ventas_detalle (
     descuento_mxn DECIMAL(10,2) DEFAULT 0,
     total_linea DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (venta_id) REFERENCES ventas(id),
+    FOREIGN KEY (producto_id) REFERENCES productos(id)
+);
+
+CREATE TABLE IF NOT EXISTS cotizaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    subtotal DECIMAL(10,2) NOT NULL,
+    descuento_total DECIMAL(10,2) DEFAULT 0,
+    iva DECIMAL(10,2) NOT NULL,
+    total DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+);
+
+CREATE TABLE IF NOT EXISTS cotizaciones_detalle (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cotizacion_id INT NOT NULL,
+    producto_id INT NULL,
+    nombre_producto VARCHAR(255) NOT NULL,
+    cantidad DECIMAL(10,2) NOT NULL,
+    costo_unitario DECIMAL(10,2) NOT NULL,
+    descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
+    descuento_mxn DECIMAL(10,2) DEFAULT 0,
+    total_linea DECIMAL(10,2) NOT NULL,
+    FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
