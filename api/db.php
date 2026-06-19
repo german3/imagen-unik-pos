@@ -2,10 +2,10 @@
 // api/db.php
 // Reads from environment variables (Render) or falls back to local XAMPP defaults
 
-$host    = getenv('DB_HOST') ?: '127.0.0.1';
-$db      = getenv('DB_NAME') ?: 'imagen_unik_pos';
-$user    = getenv('DB_USER') ?: 'root';
-$pass    = getenv('DB_PASS') ?: '';
+$host    = trim(getenv('DB_HOST') ?: '127.0.0.1');
+$db      = trim(getenv('DB_NAME') ?: 'imagen_unik_pos');
+$user    = trim(getenv('DB_USER') ?: 'root');
+$pass    = trim(getenv('DB_PASS') ?: '');
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
