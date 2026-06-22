@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize first row
     addNewRow();
 
+    // ── Client autocomplete ──────────────────────────────────────────────
+    initClientAutocomplete();
+
     // Event listener for Confirm Sale button
     const confirmBtn = document.getElementById('btn-confirm');
     if(confirmBtn) {
@@ -17,6 +20,76 @@ document.addEventListener('DOMContentLoaded', () => {
         cotizacionBtn.addEventListener('click', () => confirmTransaction('api/save_quote.php', 'Cotización guardada en el historial.'));
     }
 });
+
+// ── Client Autocomplete ──────────────────────────────────────────────────────
+function initClientAutocomplete() {
+    const clientInput   = document.getElementById('client-search');
+    const clientIdInput = document.getElementById('client-id');
+    const suggestionsEl = document.getElementById('client-suggestions');
+    if (!clientInput || !suggestionsEl) return;
+
+    let clientTimeout;
+
+    clientInput.addEventListener('input', () => {
+        clearTimeout(clientTimeout);
+        const val = clientInput.value.trim();
+
+        // If the user clears or types very little, reset to Público General
+        if (val.length < 2) {
+            suggestionsEl.style.display = 'none';
+            return;
+        }
+
+        clientTimeout = setTimeout(() => {
+            fetch(`api/search_clients.php?q=${encodeURIComponent(val)}`)
+                .then(res => res.json())
+                .then(data => {
+                    suggestionsEl.innerHTML = '';
+                    if (!Array.isArray(data) || data.length === 0) {
+                        suggestionsEl.style.display = 'none';
+                        return;
+                    }
+                    data.forEach(client => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-suggestion';
+                        const fullName = `${client.nombre} ${client.apellidos || ''}`.trim();
+                        const detail   = client.rfc ? ` · RFC: ${client.rfc}` : (client.telefono ? ` · Tel: ${client.telefono}` : '');
+                        div.innerHTML  = `<span>${fullName}</span><small class="text-muted">${detail}</small>`;
+                        div.addEventListener('mousedown', (e) => {
+                            // mousedown fires before blur so we can safely update the inputs
+                            e.preventDefault();
+                            clientInput.value   = fullName;
+                            clientIdInput.value = client.id;
+                            suggestionsEl.style.display = 'none';
+                        });
+                        suggestionsEl.appendChild(div);
+                    });
+                    suggestionsEl.style.display = 'block';
+                })
+                .catch(err => console.error('Client search error:', err));
+        }, 300);
+    });
+
+    // Hide suggestions when focus leaves the input
+    clientInput.addEventListener('blur', () => {
+        setTimeout(() => { suggestionsEl.style.display = 'none'; }, 200);
+    });
+
+    // Clear id when user manually edits the name (forces re-selection)
+    clientInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            suggestionsEl.style.display = 'none';
+        } else if (e.key === 'Enter') {
+            // Select the first suggestion if available
+            const first = suggestionsEl.querySelector('.autocomplete-suggestion');
+            if (first) first.dispatchEvent(new MouseEvent('mousedown'));
+            suggestionsEl.style.display = 'none';
+        } else {
+            // Any other key -> user is editing, reset stored id
+            clientIdInput.value = '';
+        }
+    });
+}
 
 function updateClock() {
     const clockEl = document.getElementById('clock');
@@ -237,8 +310,14 @@ function confirmTransaction(endpoint, successMessage) {
     const descTotalEl = document.getElementById('lbl-desc-total');
     const lblDesc = descTotalEl ? descTotalEl.textContent.replace('$','') : '0';
 
+    // Use the client selected via autocomplete; fall back to 1 (Público General)
+    const clienteIdEl = document.getElementById('client-id');
+    const clienteId   = (clienteIdEl && clienteIdEl.value && clienteIdEl.value !== '') 
+                        ? parseInt(clienteIdEl.value, 10) 
+                        : 1;
+
     const payload = {
-        cliente_id: 1, // Público General (podrías tomarlo de un select)
+        cliente_id: clienteId,
         subtotal: parseFloat(document.getElementById('lbl-subtotal').textContent.replace('$','')),
         descuento_total: parseFloat(lblDesc),
         iva: parseFloat(document.getElementById('lbl-iva').textContent.replace('$','')),
