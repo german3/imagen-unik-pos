@@ -66,7 +66,7 @@
                 <a href="clientes.php" class="btn btn-secondary">REGISTRAR CLIENTE</a>
                 <button class="btn btn-secondary">CORTE DE CAJA</button>
                 <a href="cotizaciones.php" class="btn btn-secondary">COTIZACIONES</a>
-                <button class="btn btn-secondary">HISTORIALES</button>
+                <a href="historiales.php" class="btn btn-secondary">HISTORIALES</a>
             </div>
 
             <!-- Totals Panel -->
