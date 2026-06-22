@@ -143,7 +143,8 @@
                     <div class="field-group fg-2">
                         <div class="field">
                             <label>SKU <span class="req">*</span></label>
-                            <input type="text" id="sku" name="sku" placeholder="Ej: PROD-001" required>
+                            <input type="text" id="sku" name="sku" placeholder="Cargando..." readonly style="background: #f1f3f4; color: #5f6368; cursor: not-allowed; font-weight: 600;" required>
+                            <div class="hint">Se genera automáticamente</div>
                         </div>
                         <div class="field">
                             <label>Código de Barras</label>
@@ -179,14 +180,14 @@
                             <div class="hint">Precio de compra</div>
                         </div>
                         <div class="field">
-                            <label>Utilidad (%)</label>
-                            <input type="number" id="utilidad" name="utilidad" step="0.01" value="0.00" placeholder="0.00">
-                            <div class="hint">Margen de ganancia</div>
+                            <label>Precio Final <span class="req">*</span></label>
+                            <input type="number" id="precio" name="precio" step="0.01" value="0.00" placeholder="0.00" required>
+                            <div class="hint">Precio de venta</div>
                         </div>
                         <div class="field">
-                            <label>Precio Final <span class="req">*</span></label>
-                            <input type="number" id="precio" name="precio" step="0.01" value="0.00" class="auto-calc" required>
-                            <div class="hint">Se calcula automáticamente</div>
+                            <label>Utilidad ($)</label>
+                            <input type="number" id="utilidad" name="utilidad" step="0.01" value="0.00" class="auto-calc" readonly>
+                            <div class="hint">Ganancia (Precio - Costo)</div>
                         </div>
                         <div class="field">
                             <label>Existencia (Stock)</label>
@@ -221,14 +222,28 @@
         const utilInput  = document.getElementById('utilidad');
         const priceInput = document.getElementById('precio');
 
-        function calcPrice() {
-            const c = parseFloat(costInput.value) || 0;
-            const u = parseFloat(utilInput.value) || 0;
-            priceInput.value = (c + (c * (u / 100))).toFixed(2);
+        function fetchNextSku() {
+            fetch('api/get_next_sku.php')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('sku').value = data.sku;
+                    }
+                })
+                .catch(err => console.error("Error al obtener SKU:", err));
         }
 
-        costInput.addEventListener('input', calcPrice);
-        utilInput.addEventListener('input', calcPrice);
+        function calcUtility() {
+            const c = parseFloat(costInput.value) || 0;
+            const p = parseFloat(priceInput.value) || 0;
+            utilInput.value = (p - c).toFixed(2);
+        }
+
+        costInput.addEventListener('input', calcUtility);
+        priceInput.addEventListener('input', calcUtility);
+
+        // Cargar SKU al iniciar
+        document.addEventListener('DOMContentLoaded', fetchNextSku);
 
         document.getElementById('productForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -246,6 +261,8 @@
                     showToast('✅ ' + res.message, 'success');
                     this.reset();
                     priceInput.value = '0.00';
+                    utilInput.value = '0.00';
+                    fetchNextSku();
                 } else {
                     showToast('❌ Error: ' + res.message, 'error');
                 }

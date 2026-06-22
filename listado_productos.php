@@ -171,15 +171,15 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="edit-id">
-                <div class="mfield"><label>SKU *</label><input type="text" id="edit-sku"></div>
+                <div class="mfield"><label>SKU *</label><input type="text" id="edit-sku" readonly style="background: #f1f3f4; color: #5f6368; cursor: not-allowed; font-weight: 600;"></div>
                 <div class="mfield"><label>Código de Barras</label><input type="text" id="edit-barras"></div>
                 <div class="mfield full"><label>Descripción *</label><input type="text" id="edit-descripcion"></div>
                 <div class="mfield"><label>Categoría</label><input type="text" id="edit-categoria"></div>
                 <div class="mfield"><label>Proveedor</label><input type="text" id="edit-proveedor"></div>
                 <div class="cols3">
-                    <div class="mfield"><label>Costo</label><input type="number" id="edit-costo" step="0.01" oninput="calcEditPrice()"></div>
-                    <div class="mfield"><label>Utilidad (%)</label><input type="number" id="edit-utilidad" step="0.01" oninput="calcEditPrice()"></div>
-                    <div class="mfield"><label>Precio Final *</label><input type="number" id="edit-precio" step="0.01" class="auto-calc"></div>
+                    <div class="mfield"><label>Costo</label><input type="number" id="edit-costo" step="0.01" oninput="calcEditUtility()"></div>
+                    <div class="mfield"><label>Precio Final *</label><input type="number" id="edit-precio" step="0.01" oninput="calcEditUtility()"></div>
+                    <div class="mfield"><label>Utilidad ($)</label><input type="number" id="edit-utilidad" step="0.01" class="auto-calc" readonly></div>
                     <div class="mfield"><label>Stock</label><input type="number" id="edit-existencia" step="1"></div>
                 </div>
             </div>
@@ -288,10 +288,10 @@
         }
         function closeEdit() { document.getElementById('edit-modal').style.display = 'none'; }
 
-        function calcEditPrice() {
+        function calcEditUtility() {
             const c = parseFloat(document.getElementById('edit-costo').value) || 0;
-            const u = parseFloat(document.getElementById('edit-utilidad').value) || 0;
-            document.getElementById('edit-precio').value = (c + (c * (u / 100))).toFixed(2);
+            const p = parseFloat(document.getElementById('edit-precio').value) || 0;
+            document.getElementById('edit-utilidad').value = (p - c).toFixed(2);
         }
 
         function saveEdit() {
