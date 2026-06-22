@@ -41,6 +41,34 @@ try {
         FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE
      )");
 
+     // Auto-migrate: Corte de Caja tables
+     $pdo->exec("CREATE TABLE IF NOT EXISTS cortes_caja (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        fecha_inicio DATETIME NOT NULL,
+        fecha_fin DATETIME NOT NULL,
+        fondo_inicial DECIMAL(10,2) DEFAULT 0,
+        num_ventas INT DEFAULT 0,
+        subtotal_ventas DECIMAL(10,2) DEFAULT 0,
+        descuentos_ventas DECIMAL(10,2) DEFAULT 0,
+        iva_ventas DECIMAL(10,2) DEFAULT 0,
+        total_ventas DECIMAL(10,2) DEFAULT 0,
+        total_gastos DECIMAL(10,2) DEFAULT 0,
+        efectivo_esperado DECIMAL(10,2) DEFAULT 0,
+        efectivo_contado DECIMAL(10,2) DEFAULT 0,
+        diferencia DECIMAL(10,2) DEFAULT 0,
+        notas TEXT,
+        creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+     )");
+
+     $pdo->exec("CREATE TABLE IF NOT EXISTS gastos_caja (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        corte_id INT NULL,
+        descripcion VARCHAR(255) NOT NULL,
+        monto DECIMAL(10,2) NOT NULL,
+        fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (corte_id) REFERENCES cortes_caja(id) ON DELETE CASCADE
+     )");
+
 } catch (\PDOException $e) {
      die(json_encode([
          'success' => false,

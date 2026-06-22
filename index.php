@@ -26,14 +26,14 @@
         <!-- Left Panel: Client & Table -->
         <div class="main-panel">
             <div class="client-section glass">
-                <div class="input-group">
+                <div class="input-group" style="position: relative; flex: 1;">
                     <label>CLIENTE:</label>
-                    <!-- Podría ser dinámico desde BD, se pone default para la vista -->
-                    <input type="text" class="input-control" value="Público General" readonly>
+                    <input type="text" id="client-search" class="input-control" value="Público General" placeholder="Escribir cliente...">
+                    <div class="autocomplete-suggestions" id="client-suggestions"></div>
                 </div>
                 <div class="input-group" style="max-width: 100px;">
                     <label>ID</label>
-                    <input type="text" class="input-control center" value="1" readonly>
+                    <input type="text" id="client-id" class="input-control center" value="1" readonly>
                 </div>
             </div>
 
@@ -64,7 +64,7 @@
             <div class="actions-panel glass">
                 <a href="productos.php" class="btn btn-primary">REGISTRAR PRODUCTO</a>
                 <a href="clientes.php" class="btn btn-secondary">REGISTRAR CLIENTE</a>
-                <button class="btn btn-secondary">CORTE DE CAJA</button>
+                <a href="corte_de_caja.php" class="btn btn-secondary">CORTE DE CAJA</a>
                 <a href="cotizaciones.php" class="btn btn-secondary">COTIZACIONES</a>
                 <a href="historiales.php" class="btn btn-secondary">HISTORIALES</a>
             </div>
