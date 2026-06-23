@@ -26,14 +26,15 @@
         <!-- Left Panel: Client & Table -->
         <div class="main-panel">
             <div class="client-section glass">
+                <input type="hidden" id="client-id" value="1">
                 <div class="input-group" style="position: relative; flex: 1;">
                     <label>CLIENTE:</label>
                     <input type="text" id="client-search" class="input-control" value="Público General" placeholder="Escribir cliente...">
                     <div class="autocomplete-suggestions" id="client-suggestions"></div>
                 </div>
                 <div class="input-group" style="max-width: 100px;">
-                    <label>ID</label>
-                    <input type="text" id="client-id" class="input-control center" value="1" readonly>
+                    <label>ID VENTA</label>
+                    <input type="text" id="folio-venta" class="input-control center" value="Cargando..." readonly style="background: #f1f3f4; color: #5f6368; font-weight: bold; cursor: not-allowed;">
                 </div>
             </div>
 

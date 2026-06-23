@@ -6,6 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize first row
     addNewRow();
 
+    // Fetch next sale ID
+    fetchNextSaleId();
+
     // ── Client autocomplete ──────────────────────────────────────────────
     initClientAutocomplete();
 
@@ -20,6 +23,19 @@ document.addEventListener('DOMContentLoaded', () => {
         cotizacionBtn.addEventListener('click', () => confirmTransaction('api/save_quote.php', 'Cotización guardada en el historial.'));
     }
 });
+
+function fetchNextSaleId() {
+    const folioInput = document.getElementById('folio-venta');
+    if (!folioInput) return;
+    fetch('api/get_next_sale_id.php')
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                folioInput.value = data.next_id;
+            }
+        })
+        .catch(err => console.error('Error fetching next sale ID:', err));
+}
 
 // ── Client Autocomplete ──────────────────────────────────────────────────────
 function initClientAutocomplete() {
