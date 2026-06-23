@@ -22,6 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if(cotizacionBtn) {
         cotizacionBtn.addEventListener('click', () => confirmTransaction('api/save_quote.php', 'Cotización guardada en el historial.'));
     }
+
+    const ivaRateEl = document.getElementById('iva-rate');
+    if(ivaRateEl) {
+        ivaRateEl.addEventListener('change', calculateTotals);
+    }
 });
 
 function fetchNextSaleId() {
@@ -286,7 +291,9 @@ function calculateTotals() {
     });
 
     const subtotalConDescuento = subtotalSinIva - descuentoTotal;
-    const iva = subtotalConDescuento * 0.16;
+    const ivaRateEl = document.getElementById('iva-rate');
+    const ivaRate = ivaRateEl ? parseFloat(ivaRateEl.value) : 0.16;
+    const iva = subtotalConDescuento * ivaRate;
     const totalPagar = subtotalConDescuento + iva;
 
     document.getElementById('lbl-subtotal').textContent = `$${subtotalSinIva.toFixed(2)}`;

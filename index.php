@@ -85,7 +85,11 @@
                     <span id="lbl-subtotal-desc">$0.00</span>
                 </div>
                 <div class="total-row">
-                    <span>IVA (16%)</span>
+                    <select id="iva-rate" class="select-iva" style="background: transparent; border: 1px solid #ccc; border-radius: 6px; padding: 0.25rem 0.5rem; font-family: inherit; font-size: 0.85rem; font-weight: 600; color: #5f6368; outline: none; cursor: pointer;">
+                        <option value="0.16" selected>IVA (16%)</option>
+                        <option value="0.08">IVA (08%)</option>
+                        <option value="0.00">SIN IVA</option>
+                    </select>
                     <span id="lbl-iva">$0.00</span>
                 </div>
                 <hr>
