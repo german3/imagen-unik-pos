@@ -117,53 +117,7 @@
         .ventas-table .right { text-align: right; }
         #ventas-empty { text-align: center; color: var(--text-muted); padding: 1.5rem; font-size: 0.88rem; }
 
-        /* ── Denominaciones grid ────────────────────────────────────────────── */
-        .denom-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
-            gap: 0.6rem;
-        }
-        .denom-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: white;
-            border: 1.5px solid var(--border);
-            border-radius: 9px;
-            padding: 0.5rem 0.75rem;
-            transition: border-color 0.2s;
-        }
-        .denom-item:focus-within { border-color: var(--primary); }
-        .denom-badge {
-            background: linear-gradient(135deg, var(--unik-cyan), var(--primary));
-            color: white; border-radius: 5px; padding: 0.2rem 0.45rem;
-            font-size: 0.72rem; font-weight: 700; min-width: 48px; text-align: center;
-            flex-shrink: 0;
-        }
-        .denom-badge.moneda { background: linear-gradient(135deg, #f7b731, #f0932b); }
-        .denom-qty {
-            width: 52px; border: none; outline: none;
-            font-family: inherit; font-size: 0.95rem; font-weight: 700;
-            text-align: center; background: transparent; color: var(--text-main);
-        }
-        .denom-subtotal {
-            margin-left: auto; font-size: 0.8rem;
-            font-weight: 600; color: var(--text-muted);
-            min-width: 72px; text-align: right;
-        }
-        .denom-sep {
-            grid-column: 1 / -1;
-            font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
-            text-transform: uppercase; letter-spacing: 0.06em;
-            margin-top: 0.2rem;
-        }
-        .contado-total-box {
-            display: flex; justify-content: flex-end; align-items: center;
-            gap: 0.9rem; margin-top: 0.9rem; padding-top: 0.75rem;
-            border-top: 2px solid var(--border);
-        }
-        .contado-total-box span { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-        .contado-total-box strong { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        /* ── Denominaciones grid removido ── */
 
         /* ── Money input ────────────────────────────────────────────────────── */
         .money-input-wrap { position: relative; }
@@ -368,20 +322,7 @@
                 </div>
             </div>
 
-            <!-- 2 · CONTEO FÍSICO DE EFECTIVO ────────────────────────── -->
-            <div class="corte-card">
-                <h2>💰 Conteo físico de efectivo</h2>
-                <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1rem;">
-                    Ingresa cuántos billetes / monedas hay físicamente en caja.
-                </p>
-                <div class="denom-grid" id="denom-grid">
-                    <div class="denom-sep">📄 Billetes</div>
-                </div>
-                <div class="contado-total-box">
-                    <span>Total contado en caja</span>
-                    <strong id="contado-total-label">$0.00</strong>
-                </div>
-            </div>
+
 
         </div><!-- /.col-left -->
 
@@ -399,6 +340,18 @@
                 <div class="money-input-wrap">
                     <span class="currency-prefix">$</span>
                     <input type="number" id="fondo-inicial" value="0" min="0" step="0.01" placeholder="0.00">
+                </div>
+            </div>
+
+            <!-- 3b · EFECTIVO CONTADO ──────────────────────────────────── -->
+            <div class="corte-card">
+                <h2>💰 Efectivo contado en caja</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                    Total de efectivo físico real en caja al momento del corte.
+                </p>
+                <div class="money-input-wrap">
+                    <span class="currency-prefix">$</span>
+                    <input type="number" id="efectivo-contado" value="0" min="0" step="0.01" placeholder="0.00">
                 </div>
             </div>
 
@@ -477,49 +430,7 @@
     let ventasData   = { totales:{num_ventas:0,subtotal_ventas:0,descuentos_ventas:0,iva_ventas:0,total_ventas:0}, ventas:[] };
     let gastoCounter = 0;
 
-    // ── Denominaciones ────────────────────────────────────────────────────
-    const DENOMINACIONES = [
-        {val:1000,tipo:'billete'},{val:500,tipo:'billete'},{val:200,tipo:'billete'},
-        {val:100, tipo:'billete'},{val:50, tipo:'billete'},{val:20, tipo:'billete'},
-        {val:10,  tipo:'moneda' },{val:5,  tipo:'moneda' },{val:2,  tipo:'moneda' },{val:1,tipo:'moneda'},
-    ];
-
-    function buildDenomGrid() {
-        const grid = document.getElementById('denom-grid');
-        let moedaSep = false;
-        DENOMINACIONES.forEach(d => {
-            if (d.tipo === 'moneda' && !moedaSep) {
-                const sep = document.createElement('div');
-                sep.className = 'denom-sep';
-                sep.textContent = '🪙 Monedas';
-                grid.appendChild(sep);
-                moedaSep = true;
-            }
-            const item = document.createElement('div');
-            item.className = 'denom-item';
-            item.innerHTML = `
-                <span class="denom-badge ${d.tipo==='moneda'?'moneda':''}">$${d.val}</span>
-                <input type="number" class="denom-qty" data-val="${d.val}"
-                       value="0" min="0" step="1">
-                <span class="denom-subtotal" id="dsub-${d.val}">$0.00</span>
-            `;
-            grid.appendChild(item);
-            item.querySelector('.denom-qty').addEventListener('input', () => { recalcDenoms(); recalcResumen(); });
-        });
-    }
-
-    function recalcDenoms() {
-        let total = 0;
-        document.querySelectorAll('.denom-qty').forEach(inp => {
-            const val = parseInt(inp.dataset.val,10);
-            const qty = parseInt(inp.value,10) || 0;
-            const sub = val * qty;
-            total += sub;
-            document.getElementById(`dsub-${val}`).textContent = fmt(sub);
-        });
-        document.getElementById('contado-total-label').textContent = fmt(total);
-        return total;
-    }
+    // ── Conteo de denominaciones removido ──
 
     // ── Gastos ────────────────────────────────────────────────────────────
     function addGastoRow(desc='', monto='') {
@@ -555,7 +466,7 @@
         const fondo     = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
         const totalGasto= recalcGastos();
-        const contado   = recalcDenoms();
+        const contado   = parseFloat(document.getElementById('efectivo-contado').value) || 0;
         const esperado  = fondo + totalVent - totalGasto;
         const diferencia= contado - esperado;
 
@@ -656,7 +567,7 @@
         const t          = ventasData.totales;
         const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalGasto = recalcGastos();
-        const contado    = recalcDenoms();
+        const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
         const esperado   = fondo + parseFloat(t.total_ventas || 0) - totalGasto;
         const diferencia = contado - esperado;
 
@@ -759,7 +670,7 @@
         const t          = ventasData.totales;
         const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalGasto = recalcGastos();
-        const contado    = recalcDenoms();
+        const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
         const esperado   = fondo + parseFloat(t.total_ventas || 0) - totalGasto;
         const gastos = [];
         document.querySelectorAll('.gasto-row').forEach(row => {
@@ -795,12 +706,11 @@
         document.getElementById('fecha-inicio').value = today;
         document.getElementById('fecha-fin').value    = today;
 
-        buildDenomGrid();
-
         document.getElementById('btn-cargar').addEventListener('click', cargarVentas);
         document.getElementById('btn-add-gasto').addEventListener('click', () => addGastoRow());
         document.getElementById('btn-cerrar-corte').addEventListener('click', cerrarCorte);
         document.getElementById('fondo-inicial').addEventListener('input', recalcResumen);
+        document.getElementById('efectivo-contado').addEventListener('input', recalcResumen);
 
         cargarVentas();
     });
