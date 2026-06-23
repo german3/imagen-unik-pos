@@ -331,19 +331,7 @@
         <!-- ════════════════════════════════════════════════════════════════ -->
         <div class="col-right">
 
-            <!-- 3 · FONDO INICIAL ─────────────────────────────────────── -->
-            <div class="corte-card">
-                <h2>💵 Fondo inicial de caja</h2>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
-                    Efectivo con que se abrió la caja al inicio del turno.
-                </p>
-                <div class="money-input-wrap">
-                    <span class="currency-prefix">$</span>
-                    <input type="number" id="fondo-inicial" value="0" min="0" step="0.01" placeholder="0.00">
-                </div>
-            </div>
-
-            <!-- 3b · EFECTIVO CONTADO ──────────────────────────────────── -->
+            <!-- 3 · EFECTIVO CONTADO ──────────────────────────────────── -->
             <div class="corte-card">
                 <h2>💰 Efectivo contado en caja</h2>
                 <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
@@ -355,37 +343,10 @@
                 </div>
             </div>
 
-            <!-- 4 · GASTOS Y RETIROS ──────────────────────────────────── -->
-            <div class="corte-card">
-                <h2>🧾 Gastos y retiros</h2>
-                <div class="gastos-list" id="gastos-list"></div>
-                <button class="btn btn-secondary no-print" id="btn-add-gasto"
-                        style="font-size:0.82rem; padding:0.45rem 0.9rem; width:100%; justify-content:center; margin-bottom:0.75rem;">
-                    + Agregar gasto / retiro
-                </button>
-                <div class="gastos-total-row">
-                    <span>Total gastos</span>
-                    <strong id="gastos-total-label">$0.00</strong>
-                </div>
-            </div>
-
-            <!-- 5 · RESUMEN DE CIERRE ─────────────────────────────────── -->
+            <!-- 4 · RESUMEN DE CIERRE ─────────────────────────────────── -->
             <div class="corte-card">
                 <h2>📊 Resumen de cierre</h2>
                 <table class="resumen-table">
-                    <tr>
-                        <td class="label">Fondo inicial</td>
-                        <td class="value" id="r-fondo">$0.00</td>
-                    </tr>
-                    <tr>
-                        <td class="label">+ Total ventas</td>
-                        <td class="value" id="r-ventas">$0.00</td>
-                    </tr>
-                    <tr>
-                        <td class="label">− Total gastos</td>
-                        <td class="value" id="r-gastos">$0.00</td>
-                    </tr>
-                    <tr class="separator"><td></td><td></td></tr>
                     <tr>
                         <td class="label"><strong>Efectivo esperado</strong></td>
                         <td class="value"><strong id="r-esperado">$0.00</strong></td>
@@ -432,47 +393,15 @@
 
     // ── Conteo de denominaciones removido ──
 
-    // ── Gastos ────────────────────────────────────────────────────────────
-    function addGastoRow(desc='', monto='') {
-        gastoCounter++;
-        const id   = gastoCounter;
-        const list = document.getElementById('gastos-list');
-        const row  = document.createElement('div');
-        row.className = 'gasto-row';
-        row.id = `gasto-${id}`;
-        row.innerHTML = `
-            <input type="text"   class="gasto-desc"  placeholder="Descripción" value="${desc}">
-            <input type="number" class="gasto-monto monto-input" placeholder="0.00" value="${monto}" min="0" step="0.01">
-            <button class="btn-del-gasto" onclick="removeGasto(${id})">×</button>
-        `;
-        list.appendChild(row);
-        row.querySelector('.gasto-monto').addEventListener('input', () => { recalcGastos(); recalcResumen(); });
-    }
-
-    function removeGasto(id) {
-        const el = document.getElementById(`gasto-${id}`);
-        if (el) { el.remove(); recalcGastos(); recalcResumen(); }
-    }
-
-    function recalcGastos() {
-        let total = 0;
-        document.querySelectorAll('.gasto-monto').forEach(inp => { total += parseFloat(inp.value) || 0; });
-        document.getElementById('gastos-total-label').textContent = fmt(total);
-        return total;
-    }
+    // ── Gastos removido ──
 
     // ── Resumen en tiempo real ────────────────────────────────────────────
     function recalcResumen() {
-        const fondo     = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
-        const totalGasto= recalcGastos();
         const contado   = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado  = fondo + totalVent - totalGasto;
+        const esperado  = totalVent;
         const diferencia= contado - esperado;
 
-        document.getElementById('r-fondo').textContent    = fmt(fondo);
-        document.getElementById('r-ventas').textContent   = fmt(totalVent);
-        document.getElementById('r-gastos').textContent   = fmt(totalGasto);
         document.getElementById('r-esperado').textContent = fmt(esperado);
         document.getElementById('r-contado').textContent  = fmt(contado);
 
@@ -565,18 +494,13 @@
         if (!inicio || !fin) { alert('Selecciona las fechas y carga las ventas primero.'); return; }
 
         const t          = ventasData.totales;
-        const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
-        const totalGasto = recalcGastos();
+        const fondo      = 0;
+        const totalGasto = 0;
         const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado   = fondo + parseFloat(t.total_ventas || 0) - totalGasto;
+        const esperado   = parseFloat(t.total_ventas || 0);
         const diferencia = contado - esperado;
 
         const gastos = [];
-        document.querySelectorAll('.gasto-row').forEach(row => {
-            const desc  = row.querySelector('.gasto-desc').value.trim();
-            const monto = parseFloat(row.querySelector('.gasto-monto').value) || 0;
-            if (desc && monto > 0) gastos.push({descripcion:desc, monto});
-        });
 
         const payload = {
             fecha_inicio:      `${inicio} 00:00:00`,
@@ -633,11 +557,6 @@
         const fin      = document.getElementById('fecha-fin').value;
         const ahora    = new Date().toLocaleString('es-MX', {dateStyle:'short',timeStyle:'medium'});
 
-        let gastosHtml = '';
-        (p.gastos||[]).forEach(g => {
-            gastosHtml += `<div class="pr"><span>${g.descripcion}</span><span>${fmt(g.monto)}</span></div>`;
-        });
-
         document.getElementById('ticket-content').innerHTML = `
             <h1>IMAGEN UNIK</h1>
             <div class="sub">CORTE DE CAJA<br>Reynosa, Tamaulipas</div>
@@ -652,11 +571,6 @@
             <div class="pr"><span>IVA 16%:</span><span>${fmt(p.iva_ventas)}</span></div>
             <div class="pr bold"><span>Total ventas:</span><span>${fmt(p.total_ventas)}</span></div>
             <hr>
-            <div class="pr bold"><span>GASTOS / RETIROS</span></div>
-            ${gastosHtml || '<div class="pr"><span>(Sin gastos)</span><span>$0.00</span></div>'}
-            <div class="pr bold"><span>Total gastos:</span><span>-${fmt(p.total_gastos)}</span></div>
-            <hr>
-            <div class="pr"><span>Fondo inicial:</span><span>${fmt(p.fondo_inicial)}</span></div>
             <div class="pr bold"><span>Efectivo esperado:</span><span>${fmt(p.efectivo_esperado)}</span></div>
             <div class="pr bold"><span>Efectivo contado:</span><span>${fmt(p.efectivo_contado)}</span></div>
             <hr>
@@ -668,16 +582,11 @@
 
     function imprimirCorte() {
         const t          = ventasData.totales;
-        const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
-        const totalGasto = recalcGastos();
+        const fondo      = 0;
+        const totalGasto = 0;
         const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado   = fondo + parseFloat(t.total_ventas || 0) - totalGasto;
-        const gastos = [];
-        document.querySelectorAll('.gasto-row').forEach(row => {
-            const desc  = row.querySelector('.gasto-desc').value.trim();
-            const monto = parseFloat(row.querySelector('.gasto-monto').value) || 0;
-            if (desc && monto > 0) gastos.push({descripcion:desc, monto});
-        });
+        const esperado   = parseFloat(t.total_ventas || 0);
+        const gastos     = [];
         buildTicket({
             fecha_inicio:`${document.getElementById('fecha-inicio').value} 00:00:00`,
             fecha_fin:`${document.getElementById('fecha-fin').value} 23:59:59`,
@@ -707,9 +616,7 @@
         document.getElementById('fecha-fin').value    = today;
 
         document.getElementById('btn-cargar').addEventListener('click', cargarVentas);
-        document.getElementById('btn-add-gasto').addEventListener('click', () => addGastoRow());
         document.getElementById('btn-cerrar-corte').addEventListener('click', cerrarCorte);
-        document.getElementById('fondo-inicial').addEventListener('input', recalcResumen);
         document.getElementById('efectivo-contado').addEventListener('input', recalcResumen);
 
         cargarVentas();
