@@ -69,9 +69,98 @@ try {
         FOREIGN KEY (corte_id) REFERENCES cortes_caja(id) ON DELETE CASCADE
      )");
 
+     // Auto-migrate: add venta_por_metros, costo_m2, precio_m2 to productos if they don't exist
+     $columns = $pdo->query("DESCRIBE productos")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('venta_por_metros', $columns)) {
+         $pdo->exec("ALTER TABLE productos ADD COLUMN venta_por_metros TINYINT DEFAULT 0");
+     }
+     if (!in_array('costo_m2', $columns)) {
+         $pdo->exec("ALTER TABLE productos ADD COLUMN costo_m2 DECIMAL(10,2) DEFAULT 0.00");
+     }
+     if (!in_array('precio_m2', $columns)) {
+         $pdo->exec("ALTER TABLE productos ADD COLUMN precio_m2 DECIMAL(10,2) DEFAULT 0.00");
+     }
+
+     // Auto-migrate: add alto, ancho to ventas_detalle if they don't exist
+     $cols_vd = $pdo->query("DESCRIBE ventas_detalle")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('alto', $cols_vd)) {
+         $pdo->exec("ALTER TABLE ventas_detalle ADD COLUMN alto DECIMAL(10,2) NULL");
+     }
+     if (!in_array('ancho', $cols_vd)) {
+         $pdo->exec("ALTER TABLE ventas_detalle ADD COLUMN ancho DECIMAL(10,2) NULL");
+     }
+
+     // Auto-migrate: add alto, ancho to cotizaciones_detalle if they don't exist
+     $cols_cd = $pdo->query("DESCRIBE cotizaciones_detalle")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('alto', $cols_cd)) {
+         $pdo->exec("ALTER TABLE cotizaciones_detalle ADD COLUMN alto DECIMAL(10,2) NULL");
+     }
+     if (!in_array('ancho', $cols_cd)) {
+         $pdo->exec("ALTER TABLE cotizaciones_detalle ADD COLUMN ancho DECIMAL(10,2) NULL");
+     }
+
+     // Auto-migrate: add estatus and motivo_cancelacion to ventas
+     $cols_v = $pdo->query("DESCRIBE ventas")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('estatus', $cols_v)) {
+         $pdo->exec("ALTER TABLE ventas ADD COLUMN estatus VARCHAR(20) NOT NULL DEFAULT 'confirmada'");
+     }
+     if (!in_array('motivo_cancelacion', $cols_v)) {
+         $pdo->exec("ALTER TABLE ventas ADD COLUMN motivo_cancelacion TEXT NULL");
+     }
+
+     // ── Folio Global (contador compartido entre ventas y cotizaciones) ──────
+     // 1. Tabla secuenciadora
+     $pdo->exec("CREATE TABLE IF NOT EXISTS folio_global (
+         id INT AUTO_INCREMENT PRIMARY KEY,
+         tipo VARCHAR(20) NOT NULL COMMENT 'venta | cotizacion',
+         referencia_id INT NOT NULL COMMENT 'id real en su tabla de origen',
+         creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+     )");
+
+     // 2. Columna folio en ventas
+     $cols_v2 = $pdo->query("DESCRIBE ventas")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('folio', $cols_v2)) {
+         $pdo->exec("ALTER TABLE ventas ADD COLUMN folio INT NULL UNIQUE");
+     }
+
+     // 3. Columna folio en cotizaciones
+     $cols_c2 = $pdo->query("DESCRIBE cotizaciones")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('folio', $cols_c2)) {
+         $pdo->exec("ALTER TABLE cotizaciones ADD COLUMN folio INT NULL UNIQUE");
+     }
+
+     // 4. Back-fill: asignar folios consecutivos a los registros existentes sin folio,
+     //    ordenados cronológicamente mezclando ventas y cotizaciones.
+     $pendientes = $pdo->query("
+         SELECT 'venta' AS tipo, id, fecha_hora FROM ventas WHERE folio IS NULL
+         UNION ALL
+         SELECT 'cotizacion' AS tipo, id, fecha_hora FROM cotizaciones WHERE folio IS NULL
+         ORDER BY fecha_hora ASC, tipo ASC
+     ")->fetchAll(PDO::FETCH_ASSOC);
+
+     foreach ($pendientes as $row) {
+         // Insertar en secuenciadora para obtener el siguiente folio
+         $ins = $pdo->prepare("INSERT INTO folio_global (tipo, referencia_id, creado_en) VALUES (?, ?, ?)");
+         $ins->execute([$row['tipo'], $row['id'], $row['fecha_hora']]);
+         $nuevoFolio = (int)$pdo->lastInsertId();
+
+         if ($row['tipo'] === 'venta') {
+             $pdo->prepare("UPDATE ventas SET folio = ? WHERE id = ?")->execute([$nuevoFolio, $row['id']]);
+         } else {
+             $pdo->prepare("UPDATE cotizaciones SET folio = ? WHERE id = ?")->execute([$nuevoFolio, $row['id']]);
+         }
+     }
+
 } catch (\PDOException $e) {
      die(json_encode([
          'success' => false,
          'message' => 'Connection failed: ' . $e->getMessage()
      ]));
+}
+
+// ── Helper: genera el siguiente folio global y lo registra ───────────────────
+function getNextFolio(PDO $pdo, string $tipo, int $referencia_id): int {
+    $stmt = $pdo->prepare("INSERT INTO folio_global (tipo, referencia_id) VALUES (?, ?)");
+    $stmt->execute([$tipo, $referencia_id]);
+    return (int)$pdo->lastInsertId();
 }

@@ -13,7 +13,7 @@ if (strlen($query) < 2) {
 
 try {
     // Buscar por descripción o sku
-    $stmt = $pdo->prepare("SELECT id, sku, descripcion, precio, costo FROM productos WHERE descripcion LIKE ? OR sku LIKE ? LIMIT 10");
+    $stmt = $pdo->prepare("SELECT id, sku, descripcion, precio, costo, venta_por_metros, costo_m2, precio_m2 FROM productos WHERE descripcion LIKE ? OR sku LIKE ? LIMIT 10");
     $searchTerm = "%" . $query . "%";
     $stmt->execute([$searchTerm, $searchTerm]);
     

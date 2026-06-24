@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS productos (
     categoria VARCHAR(100),
     utilidad DECIMAL(10,2),
     codigo_barras VARCHAR(100),
+    venta_por_metros TINYINT DEFAULT 0,
+    costo_m2 DECIMAL(10,2) DEFAULT 0.00,
+    precio_m2 DECIMAL(10,2) DEFAULT 0.00,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -58,6 +61,8 @@ CREATE TABLE IF NOT EXISTS ventas_detalle (
     descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
     descuento_mxn DECIMAL(10,2) DEFAULT 0,
     total_linea DECIMAL(10,2) NOT NULL,
+    alto DECIMAL(10,2) NULL,
+    ancho DECIMAL(10,2) NULL,
     FOREIGN KEY (venta_id) REFERENCES ventas(id),
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
@@ -70,6 +75,7 @@ CREATE TABLE IF NOT EXISTS cotizaciones (
     descuento_total DECIMAL(10,2) DEFAULT 0,
     iva DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
+    folio INT NULL UNIQUE,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
@@ -83,6 +89,17 @@ CREATE TABLE IF NOT EXISTS cotizaciones_detalle (
     descuento_porcentaje DECIMAL(5,2) DEFAULT 0,
     descuento_mxn DECIMAL(10,2) DEFAULT 0,
     total_linea DECIMAL(10,2) NOT NULL,
+    alto DECIMAL(10,2) NULL,
+    ancho DECIMAL(10,2) NULL,
     FOREIGN KEY (cotizacion_id) REFERENCES cotizaciones(id) ON DELETE CASCADE,
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
+
+-- Tabla de folio global compartido (ventas confirmadas, canceladas y cotizaciones)
+CREATE TABLE IF NOT EXISTS folio_global (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(20) NOT NULL COMMENT 'venta | cotizacion',
+    referencia_id INT NOT NULL COMMENT 'id real en su tabla de origen',
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+

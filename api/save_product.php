@@ -20,6 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoria = $data['categoria'] ?? '';
     $utilidad = isset($data['utilidad']) && is_numeric($data['utilidad']) ? (float)$data['utilidad'] : 0;
     $codigo_barras = $data['codigo_barras'] ?? '';
+    $venta_por_metros = isset($data['venta_por_metros']) && ($data['venta_por_metros'] == 1 || $data['venta_por_metros'] === 'on' || $data['venta_por_metros'] === true) ? 1 : 0;
+    $costo_m2 = isset($data['costo_m2']) && is_numeric($data['costo_m2']) ? (float)$data['costo_m2'] : 0;
+    $precio_m2 = isset($data['precio_m2']) && is_numeric($data['precio_m2']) ? (float)$data['precio_m2'] : 0;
 
     if (empty($sku) || empty($descripcion)) {
         echo json_encode(['success' => false, 'message' => 'SKU y Descripción son obligatorios.']);
@@ -27,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO productos (sku, descripcion, precio, costo, proveedor, existencia, categoria, utilidad, codigo_barras) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$sku, $descripcion, $precio, $costo, $proveedor, $existencia, $categoria, $utilidad, $codigo_barras]);
+        $stmt = $pdo->prepare("INSERT INTO productos (sku, descripcion, precio, costo, proveedor, existencia, categoria, utilidad, codigo_barras, venta_por_metros, costo_m2, precio_m2) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$sku, $descripcion, $precio, $costo, $proveedor, $existencia, $categoria, $utilidad, $codigo_barras, $venta_por_metros, $costo_m2, $precio_m2]);
         echo json_encode(['success' => true, 'message' => 'Producto registrado correctamente.', 'id' => $pdo->lastInsertId()]);
     } catch (\PDOException $e) {
         if ($e->getCode() == 23000) {

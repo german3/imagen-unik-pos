@@ -36,7 +36,7 @@ function fetchNextSaleId() {
         .then(res => res.json())
         .then(data => {
             if (data.success) {
-                folioInput.value = data.next_id;
+                folioInput.value = 'F-' + String(data.next_id).padStart(4, '0');
             }
         })
         .catch(err => console.error('Error fetching next sale ID:', err));
@@ -55,7 +55,6 @@ function initClientAutocomplete() {
         clearTimeout(clientTimeout);
         const val = clientInput.value.trim();
 
-        // If the user clears or types very little, reset to Público General
         if (val.length < 2) {
             suggestionsEl.style.display = 'none';
             return;
@@ -77,7 +76,6 @@ function initClientAutocomplete() {
                         const detail   = client.rfc ? ` · RFC: ${client.rfc}` : (client.telefono ? ` · Tel: ${client.telefono}` : '');
                         div.innerHTML  = `<span>${fullName}</span><small class="text-muted">${detail}</small>`;
                         div.addEventListener('mousedown', (e) => {
-                            // mousedown fires before blur so we can safely update the inputs
                             e.preventDefault();
                             clientInput.value   = fullName;
                             clientIdInput.value = client.id;
@@ -91,22 +89,18 @@ function initClientAutocomplete() {
         }, 300);
     });
 
-    // Hide suggestions when focus leaves the input
     clientInput.addEventListener('blur', () => {
         setTimeout(() => { suggestionsEl.style.display = 'none'; }, 200);
     });
 
-    // Clear id when user manually edits the name (forces re-selection)
     clientInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             suggestionsEl.style.display = 'none';
         } else if (e.key === 'Enter') {
-            // Select the first suggestion if available
             const first = suggestionsEl.querySelector('.autocomplete-suggestion');
             if (first) first.dispatchEvent(new MouseEvent('mousedown'));
             suggestionsEl.style.display = 'none';
         } else {
-            // Any other key -> user is editing, reset stored id
             clientIdInput.value = '';
         }
     });
@@ -128,6 +122,8 @@ let lineCounter = 1;
 function addNewRow() {
     const tr = document.createElement('tr');
     tr.className = 'animate-fade-in';
+    // data-metros stores whether this row's product is sold by m²
+    tr.dataset.metros = '0';
     tr.innerHTML = `
         <td class="line-number center">${lineCounter}</td>
         <td>
@@ -135,7 +131,15 @@ function addNewRow() {
             <input type="hidden" class="product-id">
             <div class="autocomplete-suggestions"></div>
         </td>
-        <td><input type="number" class="td-input center qty" value="1" min="1" step="1"></td>
+        <td><input type="number" class="td-input center qty" value="1" min="0" step="0.01"></td>
+        <td>
+            <input type="number" class="td-input center alto" value="" placeholder="—" step="0.01" min="0"
+                   disabled style="background:transparent;color:#bbb;cursor:not-allowed;">
+        </td>
+        <td>
+            <input type="number" class="td-input center ancho" value="" placeholder="—" step="0.01" min="0"
+                   disabled style="background:transparent;color:#bbb;cursor:not-allowed;">
+        </td>
         <td><input type="number" class="td-input right cost" value="0.00" step="0.01"></td>
         <td><input type="number" class="td-input center disc-perc" value="0" min="0" max="100" step="1"></td>
         <td><input type="number" class="td-input right disc-mxn" value="0.00" readonly></td>
@@ -147,21 +151,76 @@ function addNewRow() {
 
     attachRowEvents(tr);
     
-    // Focus new product input
     tr.querySelector('.product-search').focus();
 }
 
 let searchTimeout;
 
-function attachRowEvents(tr) {
-    const productInput = tr.querySelector('.product-search');
-    const suggestionsBox = tr.querySelector('.autocomplete-suggestions');
-    const qtyInput = tr.querySelector('.qty');
-    const costInput = tr.querySelector('.cost');
-    const discPercInput = tr.querySelector('.disc-perc');
-    const deleteBtn = tr.querySelector('.row-delete-btn');
+// ── Helper: enable/disable the Alto & Ancho inputs for a row ────────────────
+function setMetrosMode(tr, isMetros) {
+    const qtyInput   = tr.querySelector('.qty');
+    const altoInput  = tr.querySelector('.alto');
+    const anchoInput = tr.querySelector('.ancho');
 
-    // Autocomplete Logic
+    tr.dataset.metros = isMetros ? '1' : '0';
+
+    if (isMetros) {
+        // Disable and grey out Cantidad
+        qtyInput.readOnly = true;
+        qtyInput.style.background  = '#f1f3f4';
+        qtyInput.style.color       = '#5f6368';
+        qtyInput.style.cursor      = 'not-allowed';
+
+        // Enable Alto & Ancho
+        altoInput.disabled  = false;
+        anchoInput.disabled = false;
+        altoInput.style.background  = '';
+        anchoInput.style.background = '';
+        altoInput.style.color       = '';
+        anchoInput.style.color      = '';
+        altoInput.style.cursor      = '';
+        anchoInput.style.cursor     = '';
+
+        // Default values
+        if (!altoInput.value || parseFloat(altoInput.value) === 0) altoInput.value = '1.00';
+        if (!anchoInput.value || parseFloat(anchoInput.value) === 0) anchoInput.value = '1.00';
+
+        // Recalculate qty from dimensions
+        const a = parseFloat(altoInput.value) || 0;
+        const b = parseFloat(anchoInput.value) || 0;
+        qtyInput.value = (a * b).toFixed(4);
+    } else {
+        // Enable Cantidad
+        qtyInput.readOnly = false;
+        qtyInput.style.background = '';
+        qtyInput.style.color      = '';
+        qtyInput.style.cursor     = '';
+
+        // Disable Alto & Ancho
+        altoInput.disabled  = true;
+        anchoInput.disabled = true;
+        altoInput.value     = '';
+        anchoInput.value    = '';
+        altoInput.style.background  = 'transparent';
+        anchoInput.style.background = 'transparent';
+        altoInput.style.color       = '#bbb';
+        anchoInput.style.color      = '#bbb';
+        altoInput.style.cursor      = 'not-allowed';
+        anchoInput.style.cursor     = 'not-allowed';
+    }
+}
+
+function attachRowEvents(tr) {
+    const productInput  = tr.querySelector('.product-search');
+    const suggestionsBox = tr.querySelector('.autocomplete-suggestions');
+    const qtyInput      = tr.querySelector('.qty');
+    const altoInput     = tr.querySelector('.alto');
+    const anchoInput    = tr.querySelector('.ancho');
+    const costInput     = tr.querySelector('.cost');
+    const discPercInput = tr.querySelector('.disc-perc');
+    const deleteBtn     = tr.querySelector('.row-delete-btn');
+
+    // ── Product autocomplete ──────────────────────────────────────────────
     productInput.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         const val = e.target.value.trim();
@@ -185,7 +244,10 @@ function attachRowEvents(tr) {
                         data.forEach(item => {
                             const div = document.createElement('div');
                             div.className = 'autocomplete-suggestion';
-                            div.innerHTML = `<span>${item.descripcion}</span> <small class="text-muted">$${item.precio}</small>`;
+                            const m2badge = parseInt(item.venta_por_metros) === 1
+                                ? ' <span style="background:#e8f0fe;color:#1a73e8;font-size:0.7rem;padding:1px 5px;border-radius:4px;font-weight:700;">M²</span>'
+                                : '';
+                            div.innerHTML = `<span>${item.descripcion}${m2badge}</span> <small class="text-muted">$${item.precio}</small>`;
                             div.addEventListener('click', () => {
                                 selectProduct(tr, item);
                                 suggestionsBox.style.display = 'none';
@@ -201,36 +263,72 @@ function attachRowEvents(tr) {
         }, 300);
     });
 
-    // Hide suggestions on blur (with delay to allow click)
     productInput.addEventListener('blur', () => {
         setTimeout(() => { suggestionsBox.style.display = 'none'; }, 200);
     });
 
-    // Keydown to handle Enter on product search (to allow custom product or move to next)
     productInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             suggestionsBox.style.display = 'none';
-            // Move focus to quantity
-            qtyInput.focus();
-            qtyInput.select();
+            // Focus Alto if metros mode, otherwise Cantidad
+            if (tr.dataset.metros === '1') {
+                altoInput.focus();
+                altoInput.select();
+            } else {
+                qtyInput.focus();
+                qtyInput.select();
+            }
         }
     });
 
-    // Add new row if editing the last row's quantity or other fields
+    // ── Alto & Ancho listeners: recalculate qty = alto × ancho ───────────
+    altoInput.addEventListener('input', () => {
+        if (tr.dataset.metros === '1') {
+            const a = parseFloat(altoInput.value) || 0;
+            const b = parseFloat(anchoInput.value) || 0;
+            qtyInput.value = (a * b).toFixed(4);
+            calculateRow(tr);
+        }
+    });
+
+    anchoInput.addEventListener('input', () => {
+        if (tr.dataset.metros === '1') {
+            const a = parseFloat(altoInput.value) || 0;
+            const b = parseFloat(anchoInput.value) || 0;
+            qtyInput.value = (a * b).toFixed(4);
+            calculateRow(tr);
+        }
+    });
+
+    // Move focus from Alto → Ancho on Enter, Ancho → next field on Enter
+    altoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            anchoInput.focus();
+            anchoInput.select();
+        }
+    });
+    anchoInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            costInput.focus();
+            costInput.select();
+        }
+    });
+
+    // ── Standard row inputs ───────────────────────────────────────────────
     const inputs = [qtyInput, costInput, discPercInput];
     inputs.forEach(input => {
         input.addEventListener('input', () => calculateRow(tr));
         input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // If this is the last row and it has data, add a new row
                 if (tr === tbody.lastElementChild && productInput.value.trim() !== '') {
                     addNewRow();
-                } else if(tr !== tbody.lastElementChild) {
-                    // move focus to next row's product search
+                } else if (tr !== tbody.lastElementChild) {
                     const nextRow = tr.nextElementSibling;
-                    if(nextRow) nextRow.querySelector('.product-search').focus();
+                    if (nextRow) nextRow.querySelector('.product-search').focus();
                 }
             }
         });
@@ -241,49 +339,69 @@ function attachRowEvents(tr) {
             tr.remove();
             calculateTotals();
         } else {
-            // Just clear it
+            // Clear the single remaining row
             tr.querySelectorAll('input').forEach(inp => {
-                if(inp.type === 'number') inp.value = inp.classList.contains('qty') ? '1' : '0.00';
+                if (inp.type === 'number') inp.value = inp.classList.contains('qty') ? '1' : '0.00';
                 else inp.value = '';
             });
+            setMetrosMode(tr, false);
             calculateTotals();
         }
     });
 }
 
+// ── Select a product from the autocomplete dropdown ──────────────────────────
 function selectProduct(tr, item) {
+    const isMetros = parseInt(item.venta_por_metros) === 1;
+
     tr.querySelector('.product-search').value = item.descripcion;
-    tr.querySelector('.product-id').value = item.id;
-    tr.querySelector('.cost').value = parseFloat(item.precio).toFixed(2);
-    
+    tr.querySelector('.product-id').value     = item.id;
+
+    // Use precio_m2 for m² products, regular precio otherwise
+    const price = isMetros
+        ? parseFloat(item.precio_m2 || item.precio)
+        : parseFloat(item.precio);
+    tr.querySelector('.cost').value = price.toFixed(2);
+
+    // Toggle metros mode (enables/disables Alto & Ancho, locks/unlocks Cantidad)
+    setMetrosMode(tr, isMetros);
+
     calculateRow(tr);
-    tr.querySelector('.qty').focus();
-    tr.querySelector('.qty').select();
+
+    if (isMetros) {
+        tr.querySelector('.alto').focus();
+        tr.querySelector('.alto').select();
+    } else {
+        tr.querySelector('.qty').focus();
+        tr.querySelector('.qty').select();
+    }
 }
 
+// ── Calculate a single row's discount and total ───────────────────────────────
 function calculateRow(tr) {
-    const qty = parseFloat(tr.querySelector('.qty').value) || 0;
-    const cost = parseFloat(tr.querySelector('.cost').value) || 0;
+    const qty      = parseFloat(tr.querySelector('.qty').value) || 0;
+    const cost     = parseFloat(tr.querySelector('.cost').value) || 0;
     const discPerc = parseFloat(tr.querySelector('.disc-perc').value) || 0;
 
-    const sub = qty * cost;
-    const discMxn = sub * (discPerc / 100);
+    const sub      = qty * cost;
+    const discMxn  = sub * (discPerc / 100);
     const totalLine = sub - discMxn;
 
-    tr.querySelector('.disc-mxn').value = discMxn.toFixed(2);
+    tr.querySelector('.disc-mxn').value   = discMxn.toFixed(2);
     tr.querySelector('.line-total').value = totalLine.toFixed(2);
 
     calculateTotals();
 }
 
+// ── Recalculate all grand totals ─────────────────────────────────────────────
 function calculateTotals() {
     let subtotalSinIva = 0;
     let descuentoTotal = 0;
 
     const rows = tbody.querySelectorAll('tr');
     rows.forEach(tr => {
-        const qty = parseFloat(tr.querySelector('.qty').value) || 0;
-        const cost = parseFloat(tr.querySelector('.cost').value) || 0;
+        const qty    = parseFloat(tr.querySelector('.qty').value) || 0;
+        const cost   = parseFloat(tr.querySelector('.cost').value) || 0;
         const discMxn = parseFloat(tr.querySelector('.disc-mxn').value) || 0;
         
         subtotalSinIva += (qty * cost);
@@ -292,34 +410,41 @@ function calculateTotals() {
 
     const subtotalConDescuento = subtotalSinIva - descuentoTotal;
     const ivaRateEl = document.getElementById('iva-rate');
-    const ivaRate = ivaRateEl ? parseFloat(ivaRateEl.value) : 0.16;
-    const iva = subtotalConDescuento * ivaRate;
+    const ivaRate   = ivaRateEl ? parseFloat(ivaRateEl.value) : 0.16;
+    const iva       = subtotalConDescuento * ivaRate;
     const totalPagar = subtotalConDescuento + iva;
 
-    document.getElementById('lbl-subtotal').textContent = `$${subtotalSinIva.toFixed(2)}`;
-    document.getElementById('lbl-desc-total').textContent = `$${descuentoTotal.toFixed(2)}`;
+    document.getElementById('lbl-subtotal').textContent     = `$${subtotalSinIva.toFixed(2)}`;
+    document.getElementById('lbl-desc-total').textContent   = `$${descuentoTotal.toFixed(2)}`;
     document.getElementById('lbl-subtotal-desc').textContent = `$${subtotalConDescuento.toFixed(2)}`;
-    document.getElementById('lbl-iva').textContent = `$${iva.toFixed(2)}`;
-    document.getElementById('lbl-total').textContent = `$${totalPagar.toFixed(2)}`;
+    document.getElementById('lbl-iva').textContent          = `$${iva.toFixed(2)}`;
+    document.getElementById('lbl-total').textContent        = `$${totalPagar.toFixed(2)}`;
 }
 
+// ── Build payload and send to the server ─────────────────────────────────────
 function confirmTransaction(endpoint, successMessage) {
-    const rows = tbody.querySelectorAll('tr');
+    const rows    = tbody.querySelectorAll('tr');
     const detalles = [];
-    let hasItems = false;
+    let hasItems  = false;
 
     rows.forEach(tr => {
         const prodName = tr.querySelector('.product-search').value.trim();
         if (prodName) {
             hasItems = true;
+            const isMetros = tr.dataset.metros === '1';
+            const altoVal  = isMetros ? (parseFloat(tr.querySelector('.alto').value)  || null) : null;
+            const anchoVal = isMetros ? (parseFloat(tr.querySelector('.ancho').value) || null) : null;
+
             detalles.push({
-                producto_id: tr.querySelector('.product-id').value || null,
-                producto: prodName,
-                cantidad: parseFloat(tr.querySelector('.qty').value) || 0,
-                costo_unitario: parseFloat(tr.querySelector('.cost').value) || 0,
+                producto_id:         tr.querySelector('.product-id').value || null,
+                producto:            prodName,
+                cantidad:            parseFloat(tr.querySelector('.qty').value) || 0,
+                costo_unitario:      parseFloat(tr.querySelector('.cost').value) || 0,
                 descuento_porcentaje: parseFloat(tr.querySelector('.disc-perc').value) || 0,
-                descuento_mxn: parseFloat(tr.querySelector('.disc-mxn').value) || 0,
-                total_linea: parseFloat(tr.querySelector('.line-total').value) || 0
+                descuento_mxn:       parseFloat(tr.querySelector('.disc-mxn').value) || 0,
+                total_linea:         parseFloat(tr.querySelector('.line-total').value) || 0,
+                alto:                altoVal,
+                ancho:               anchoVal
             });
         }
     });
@@ -329,23 +454,21 @@ function confirmTransaction(endpoint, successMessage) {
         return;
     }
 
-    // Get subtotal from lbl-subtotal-desc, but fallback to raw lbl-subtotal
     const descTotalEl = document.getElementById('lbl-desc-total');
-    const lblDesc = descTotalEl ? descTotalEl.textContent.replace('$','') : '0';
+    const lblDesc     = descTotalEl ? descTotalEl.textContent.replace('$', '') : '0';
 
-    // Use the client selected via autocomplete; fall back to 1 (Público General)
     const clienteIdEl = document.getElementById('client-id');
     const clienteId   = (clienteIdEl && clienteIdEl.value && clienteIdEl.value !== '') 
                         ? parseInt(clienteIdEl.value, 10) 
                         : 1;
 
     const payload = {
-        cliente_id: clienteId,
-        subtotal: parseFloat(document.getElementById('lbl-subtotal').textContent.replace('$','')),
+        cliente_id:      clienteId,
+        subtotal:        parseFloat(document.getElementById('lbl-subtotal').textContent.replace('$', '')),
         descuento_total: parseFloat(lblDesc),
-        iva: parseFloat(document.getElementById('lbl-iva').textContent.replace('$','')),
-        total: parseFloat(document.getElementById('lbl-total').textContent.replace('$','')),
-        detalles: detalles
+        iva:             parseFloat(document.getElementById('lbl-iva').textContent.replace('$', '')),
+        total:           parseFloat(document.getElementById('lbl-total').textContent.replace('$', '')),
+        detalles:        detalles
     };
 
     fetch(endpoint, {

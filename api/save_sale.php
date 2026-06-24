@@ -12,12 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $cliente_id = $data['cliente_id'] ?? 1; // Por defecto 1 (Público General)
-    $subtotal = $data['subtotal'] ?? 0;
-    $descuento_total = $data['descuento_total'] ?? 0;
-    $iva = $data['iva'] ?? 0;
-    $total = $data['total'] ?? 0;
-    $detalles = $data['detalles'] ?? [];
+    $cliente_id         = $data['cliente_id'] ?? 1;
+    $subtotal           = $data['subtotal'] ?? 0;
+    $descuento_total    = $data['descuento_total'] ?? 0;
+    $iva                = $data['iva'] ?? 0;
+    $total              = $data['total'] ?? 0;
+    $detalles           = $data['detalles'] ?? [];
+    $estatus            = in_array($data['estatus'] ?? '', ['confirmada','cancelada'])
+                          ? $data['estatus'] : 'confirmada';
+    $motivo_cancelacion = ($estatus === 'cancelada') ? trim($data['motivo_cancelacion'] ?? '') : null;
 
     if (empty($detalles)) {
         echo json_encode(['success' => false, 'message' => 'La venta no tiene productos.']);
@@ -28,12 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // 1. Guardar la venta principal
-        $stmt = $pdo->prepare("INSERT INTO ventas (cliente_id, subtotal, descuento_total, iva, total) VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$cliente_id, $subtotal, $descuento_total, $iva, $total]);
+        $stmt = $pdo->prepare("INSERT INTO ventas (cliente_id, subtotal, descuento_total, iva, total, estatus, motivo_cancelacion) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$cliente_id, $subtotal, $descuento_total, $iva, $total, $estatus, $motivo_cancelacion]);
         $venta_id = $pdo->lastInsertId();
 
+        // 1b. Asignar folio global único (compartido con cotizaciones)
+        $folio = getNextFolio($pdo, 'venta', (int)$venta_id);
+        $pdo->prepare("UPDATE ventas SET folio = ? WHERE id = ?")->execute([$folio, $venta_id]);
+
         // 2. Guardar los detalles
-        $stmt_detalle = $pdo->prepare("INSERT INTO ventas_detalle (venta_id, producto_id, nombre_producto, cantidad, costo_unitario, descuento_porcentaje, descuento_mxn, total_linea) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt_detalle = $pdo->prepare("INSERT INTO ventas_detalle (venta_id, producto_id, nombre_producto, cantidad, costo_unitario, descuento_porcentaje, descuento_mxn, total_linea, alto, ancho) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
         foreach ($detalles as $item) {
             $producto_id = isset($item['producto_id']) && $item['producto_id'] ? $item['producto_id'] : null;
@@ -43,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $descuento_porcentaje = $item['descuento_porcentaje'] ?? 0;
             $descuento_mxn = $item['descuento_mxn'] ?? 0;
             $total_linea = $item['total_linea'];
+            $alto = isset($item['alto']) && $item['alto'] !== '' && $item['alto'] !== null ? (float)$item['alto'] : null;
+            $ancho = isset($item['ancho']) && $item['ancho'] !== '' && $item['ancho'] !== null ? (float)$item['ancho'] : null;
 
             $stmt_detalle->execute([
                 $venta_id, 
@@ -52,11 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $costo_unitario, 
                 $descuento_porcentaje, 
                 $descuento_mxn, 
-                $total_linea
+                $total_linea,
+                $alto,
+                $ancho
             ]);
 
-            // Si hay producto_id, opcionalmente descontar stock (existencia)
-            if ($producto_id) {
+            // Descontar stock solo en ventas confirmadas
+            if ($producto_id && $estatus === 'confirmada') {
                 $stmt_stock = $pdo->prepare("UPDATE productos SET existencia = existencia - ? WHERE id = ?");
                 $stmt_stock->execute([$cantidad, $producto_id]);
             }

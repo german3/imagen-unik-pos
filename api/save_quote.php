@@ -26,10 +26,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $cotizacionId = $pdo->lastInsertId();
 
-        $stmtDetalle = $pdo->prepare("INSERT INTO cotizaciones_detalle (cotizacion_id, producto_id, nombre_producto, cantidad, costo_unitario, descuento_porcentaje, descuento_mxn, total_linea) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        // Asignar folio global único (compartido con ventas)
+        $folio = getNextFolio($pdo, 'cotizacion', (int)$cotizacionId);
+        $pdo->prepare("UPDATE cotizaciones SET folio = ? WHERE id = ?")->execute([$folio, $cotizacionId]);
+
+        $stmtDetalle = $pdo->prepare("INSERT INTO cotizaciones_detalle (cotizacion_id, producto_id, nombre_producto, cantidad, costo_unitario, descuento_porcentaje, descuento_mxn, total_linea, alto, ancho) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
         foreach ($data['detalles'] as $prod) {
             $producto_id = isset($prod['producto_id']) && $prod['producto_id'] !== '' ? $prod['producto_id'] : null;
+            $alto = isset($prod['alto']) && $prod['alto'] !== '' && $prod['alto'] !== null ? (float)$prod['alto'] : null;
+            $ancho = isset($prod['ancho']) && $prod['ancho'] !== '' && $prod['ancho'] !== null ? (float)$prod['ancho'] : null;
             $stmtDetalle->execute([
                 $cotizacionId,
                 $producto_id,
@@ -38,7 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $prod['costo_unitario'],
                 $prod['descuento_porcentaje'],
                 $prod['descuento_mxn'],
-                $prod['total_linea']
+                $prod['total_linea'],
+                $alto,
+                $ancho
             ]);
         }
 

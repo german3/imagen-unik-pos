@@ -182,6 +182,26 @@
                     <div class="mfield"><label>Utilidad ($)</label><input type="number" id="edit-utilidad" step="0.01" class="auto-calc" readonly></div>
                     <div class="mfield"><label>Stock</label><input type="number" id="edit-existencia" step="1"></div>
                 </div>
+                
+                <!-- Medidas en Metros -->
+                <div class="mfield full" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="checkbox" id="edit-venta_por_metros" style="width: auto; cursor: pointer; margin: 0;">
+                    <label for="edit-venta_por_metros" style="margin-bottom: 0; cursor: pointer; font-weight: 700; color: #1a73e8; text-transform: none; letter-spacing: normal;">¿La unidad de medida es en metros?</label>
+                </div>
+                <div id="edit-metros-fields-container" class="full" style="display: none; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1rem; margin-bottom: 0.5rem;">
+                    <div class="mfield">
+                        <label>Unidad de Medida</label>
+                        <input type="text" id="edit-unidad_medida" value="Metros" readonly style="background: #e2e8f0; color: #475569; font-weight: 600; cursor: not-allowed;">
+                    </div>
+                    <div class="mfield">
+                        <label>Costo por M²</label>
+                        <input type="number" id="edit-costo_m2" step="0.01" value="0.00">
+                    </div>
+                    <div class="mfield">
+                        <label>Precio Final por M²</label>
+                        <input type="number" id="edit-precio_m2" step="0.01" value="0.00">
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEdit()">Cancelar</button>
@@ -244,10 +264,12 @@
             products.forEach(p => {
                 const stock = parseInt(p.existencia) || 0;
                 const stockClass = stock > 0 ? 'ok' : 'low';
+                const isMetros = parseInt(p.venta_por_metros) === 1;
+                const metrosBadge = isMetros ? ' <span style="background: #e8f0fe; color: #1a73e8; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;">M²</span>' : '';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><span class="badge-sku">${p.sku}</span></td>
-                    <td><strong>${p.descripcion}</strong></td>
+                    <td><strong>${p.descripcion}</strong>${metrosBadge}</td>
                     <td>${p.categoria || '<span style="color:#bbb">—</span>'}</td>
                     <td>${p.proveedor || '<span style="color:#bbb">—</span>'}</td>
                     <td>$${parseFloat(p.costo).toFixed(2)}</td>
@@ -273,6 +295,46 @@
         }
 
         // ---- EDIT ----
+        const editVentaMetros = document.getElementById('edit-venta_por_metros');
+        const editMetrosContainer = document.getElementById('edit-metros-fields-container');
+        const editCosto = document.getElementById('edit-costo');
+        const editPrecio = document.getElementById('edit-precio');
+        const editCostoM2 = document.getElementById('edit-costo_m2');
+        const editPrecioM2 = document.getElementById('edit-precio_m2');
+
+        editVentaMetros.addEventListener('change', function() {
+            if (this.checked) {
+                editMetrosContainer.style.display = 'grid';
+                editCostoM2.value = editCosto.value;
+                editPrecioM2.value = editPrecio.value;
+                editCosto.readOnly = true;
+                editPrecio.readOnly = true;
+                editCosto.style.background = '#f1f3f4';
+                editPrecio.style.background = '#f1f3f4';
+            } else {
+                editMetrosContainer.style.display = 'none';
+                editCosto.readOnly = false;
+                editPrecio.readOnly = false;
+                editCosto.style.background = '';
+                editPrecio.style.background = '';
+            }
+            calcEditUtility();
+        });
+
+        editCostoM2.addEventListener('input', function() {
+            if (editVentaMetros.checked) {
+                editCosto.value = this.value;
+                calcEditUtility();
+            }
+        });
+
+        editPrecioM2.addEventListener('input', function() {
+            if (editVentaMetros.checked) {
+                editPrecio.value = this.value;
+                calcEditUtility();
+            }
+        });
+
         function openEdit(p) {
             document.getElementById('edit-id').value          = p.id;
             document.getElementById('edit-sku').value         = p.sku || '';
@@ -284,6 +346,26 @@
             document.getElementById('edit-utilidad').value    = parseFloat(p.utilidad).toFixed(2);
             document.getElementById('edit-precio').value      = parseFloat(p.precio).toFixed(2);
             document.getElementById('edit-existencia').value  = p.existencia || 0;
+
+            const isMetros = parseInt(p.venta_por_metros) === 1;
+            editVentaMetros.checked = isMetros;
+            editCostoM2.value = parseFloat(p.costo_m2 || 0).toFixed(2);
+            editPrecioM2.value = parseFloat(p.precio_m2 || 0).toFixed(2);
+
+            if (isMetros) {
+                editMetrosContainer.style.display = 'grid';
+                editCosto.readOnly = true;
+                editPrecio.readOnly = true;
+                editCosto.style.background = '#f1f3f4';
+                editPrecio.style.background = '#f1f3f4';
+            } else {
+                editMetrosContainer.style.display = 'none';
+                editCosto.readOnly = false;
+                editPrecio.readOnly = false;
+                editCosto.style.background = '';
+                editPrecio.style.background = '';
+            }
+
             document.getElementById('edit-modal').style.display = 'flex';
         }
         function closeEdit() { document.getElementById('edit-modal').style.display = 'none'; }
@@ -296,16 +378,19 @@
 
         function saveEdit() {
             const payload = {
-                id:            document.getElementById('edit-id').value,
-                sku:           document.getElementById('edit-sku').value,
-                codigo_barras: document.getElementById('edit-barras').value,
-                descripcion:   document.getElementById('edit-descripcion').value,
-                categoria:     document.getElementById('edit-categoria').value,
-                proveedor:     document.getElementById('edit-proveedor').value,
-                costo:         document.getElementById('edit-costo').value,
-                utilidad:      document.getElementById('edit-utilidad').value,
-                precio:        document.getElementById('edit-precio').value,
-                existencia:    document.getElementById('edit-existencia').value
+                id:               document.getElementById('edit-id').value,
+                sku:              document.getElementById('edit-sku').value,
+                codigo_barras:    document.getElementById('edit-barras').value,
+                descripcion:      document.getElementById('edit-descripcion').value,
+                categoria:        document.getElementById('edit-categoria').value,
+                proveedor:        document.getElementById('edit-proveedor').value,
+                costo:            document.getElementById('edit-costo').value,
+                utilidad:         document.getElementById('edit-utilidad').value,
+                precio:           document.getElementById('edit-precio').value,
+                existencia:       document.getElementById('edit-existencia').value,
+                venta_por_metros: editVentaMetros.checked ? 1 : 0,
+                costo_m2:         editCostoM2.value,
+                precio_m2:        editPrecioM2.value
             };
             fetch('api/update_product.php', {
                 method: 'POST',

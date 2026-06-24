@@ -9,11 +9,12 @@ $end = isset($_GET['end']) ? $_GET['end'] . ' 23:59:59' : date('Y-m-d 23:59:59')
 
 try {
     $stmt = $pdo->prepare("
-        SELECT c.*, IFNULL(cl.nombre, 'Público General') as cliente_nombre 
+        SELECT c.*, IFNULL(c.folio, c.id) AS folio,
+               IFNULL(cl.nombre, 'Público General') as cliente_nombre 
         FROM cotizaciones c
         LEFT JOIN clientes cl ON c.cliente_id = cl.id
         WHERE c.fecha_hora BETWEEN ? AND ?
-        ORDER BY c.fecha_hora DESC
+        ORDER BY c.folio DESC
     ");
     $stmt->execute([$start, $end]);
     $cotizaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);

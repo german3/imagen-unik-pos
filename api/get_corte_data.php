@@ -21,7 +21,7 @@ try {
             COALESCE(SUM(iva),0)       AS iva_ventas,
             COALESCE(SUM(total),0)     AS total_ventas
         FROM ventas
-        WHERE fecha_hora BETWEEN ? AND ?
+        WHERE estatus = 'confirmada' AND fecha_hora BETWEEN ? AND ?
     ");
     $stmtTot->execute([$dt_inicio, $dt_fin]);
     $totales = $stmtTot->fetch(PDO::FETCH_ASSOC);
@@ -30,12 +30,13 @@ try {
     $stmtVentas = $pdo->prepare("
         SELECT
             v.id,
+            IFNULL(v.folio, v.id) AS folio,
             v.fecha_hora,
             v.total,
             TRIM(CONCAT(COALESCE(cl.nombre,'Público'), ' ', COALESCE(cl.apellidos,'General'))) AS cliente
         FROM ventas v
         LEFT JOIN clientes cl ON v.cliente_id = cl.id
-        WHERE v.fecha_hora BETWEEN ? AND ?
+        WHERE v.estatus = 'confirmada' AND v.fecha_hora BETWEEN ? AND ?
         ORDER BY v.fecha_hora ASC
     ");
     $stmtVentas->execute([$dt_inicio, $dt_fin]);

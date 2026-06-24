@@ -308,7 +308,7 @@
                     <table class="ventas-table">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th>Folio</th>
                                 <th>Fecha / Hora</th>
                                 <th>Cliente</th>
                                 <th class="right">Total</th>
@@ -492,8 +492,9 @@
                         const dt = new Date(v.fecha_hora.replace(' ','T'));
                         const hora  = dt.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
                         const fecha = dt.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'});
+                        const folioText = 'F-' + String(v.folio || v.id).padStart(4, '0');
                         tr.innerHTML = `
-                            <td>#${v.id}</td>
+                            <td>${folioText}</td>
                             <td>${fecha} ${hora}</td>
                             <td>${v.cliente}</td>
                             <td class="right">${fmt(v.total)}</td>

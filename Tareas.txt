@@ -13,3 +13,13 @@ ver historial de ventas.**************
 
 
 
+fondo de caja inicial. *******
+
+agregar medidas por metro.***********
+
+check de los productos dar de alta.**********
+
+al cancelar ventana emergente para guardar motivo. ******
+
+ajustar los ID de cotización y ventas y cancelados
+

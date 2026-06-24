@@ -74,7 +74,7 @@
             <table class="quotes-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Folio</th>
                         <th>Fecha y Hora</th>
                         <th>Cliente</th>
                         <th>Total</th>
@@ -173,7 +173,7 @@
                         data.data.forEach(q => {
                             const tr = document.createElement('tr');
                             tr.innerHTML = `
-                                <td>${q.id}</td>
+                                <td style="font-weight:700;color:#5f6368;">F-${String(q.folio).padStart(4,'0')}</td>
                                 <td>${q.fecha_hora}</td>
                                 <td>${q.cliente_nombre}</td>
                                 <td>$${parseFloat(q.total).toFixed(2)}</td>
@@ -194,16 +194,19 @@
                 .then(data => {
                     if (data.success) {
                         const m = data.master;
-                        document.getElementById('print-id').textContent = m.id;
+                        document.getElementById('print-id').textContent = 'F-' + String(m.folio || m.id).padStart(4,'0');
                         document.getElementById('print-date').textContent = m.fecha_hora;
                         document.getElementById('print-client').textContent = m.cliente_nombre;
                         
                         const tbody = document.getElementById('print-items');
                         tbody.innerHTML = '';
                         data.detalles.forEach(d => {
+                            const medidas = (d.alto && d.ancho)
+                                ? `<br><small style="color:#1a73e8;font-size:0.78rem;">📐 Medidas: ${parseFloat(d.alto).toFixed(2)} m × ${parseFloat(d.ancho).toFixed(2)} m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
+                                : '';
                             tbody.innerHTML += `
                                 <tr>
-                                    <td>${d.nombre_producto}</td>
+                                    <td>${d.nombre_producto}${medidas}</td>
                                     <td>${parseFloat(d.cantidad).toFixed(2)}</td>
                                     <td>$${parseFloat(d.costo_unitario).toFixed(2)}</td>
                                     <td>$${parseFloat(d.descuento_mxn).toFixed(2)}</td>

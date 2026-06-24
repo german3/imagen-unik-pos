@@ -173,7 +173,7 @@
 
                     <!-- Precios -->
                     <p class="section-title">Precios e Inventario</p>
-                    <div class="field-group fg-4">
+                    <div class="field-group fg-4" style="margin-bottom: 1.5rem;">
                         <div class="field">
                             <label>Costo</label>
                             <input type="number" id="costo" name="costo" step="0.01" value="0.00" placeholder="0.00">
@@ -193,6 +193,32 @@
                             <label>Existencia (Stock)</label>
                             <input type="number" id="existencia" name="existencia" step="1" value="0">
                             <div class="hint">Unidades disponibles</div>
+                        </div>
+                    </div>
+
+                    <!-- Medidas en Metros -->
+                    <div class="field-group fg-full" style="margin-bottom: 1rem;">
+                        <div class="field" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="venta_por_metros" name="venta_por_metros" style="width: auto; cursor: pointer; margin: 0;">
+                            <label for="venta_por_metros" style="margin-bottom: 0; cursor: pointer; font-weight: 700; color: #1a73e8; text-transform: none; letter-spacing: normal;">¿La unidad de medida es en metros?</label>
+                        </div>
+                    </div>
+
+                    <div id="metros-fields-container" class="field-group fg-3" style="display: none; background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 1.25rem; margin-bottom: 2rem;">
+                        <div class="field">
+                            <label>Unidad de Medida</label>
+                            <input type="text" id="unidad_medida" value="Metros" readonly style="background: #e2e8f0; color: #475569; font-weight: 600; cursor: not-allowed;">
+                            <div class="hint">Fijado en metros</div>
+                        </div>
+                        <div class="field">
+                            <label>Costo por M²</label>
+                            <input type="number" id="costo_m2" name="costo_m2" step="0.01" value="0.00" placeholder="0.00">
+                            <div class="hint">Costo del metro cuadrado</div>
+                        </div>
+                        <div class="field">
+                            <label>Precio Final por M²</label>
+                            <input type="number" id="precio_m2" name="precio_m2" step="0.01" value="0.00" placeholder="0.00">
+                            <div class="hint">Precio de venta por metro cuadrado</div>
                         </div>
                     </div>
 
@@ -221,6 +247,48 @@
         const costInput  = document.getElementById('costo');
         const utilInput  = document.getElementById('utilidad');
         const priceInput = document.getElementById('precio');
+
+        const ventaMetrosCheckbox = document.getElementById('venta_por_metros');
+        const metrosFieldsContainer = document.getElementById('metros-fields-container');
+        const costoM2Input = document.getElementById('costo_m2');
+        const precioM2Input = document.getElementById('precio_m2');
+
+        ventaMetrosCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                metrosFieldsContainer.style.display = 'grid';
+                costoM2Input.value = costInput.value;
+                precioM2Input.value = priceInput.value;
+                costInput.readOnly = true;
+                priceInput.readOnly = true;
+                costInput.style.background = '#f1f3f4';
+                priceInput.style.background = '#f1f3f4';
+                costInput.style.cursor = 'not-allowed';
+                priceInput.style.cursor = 'not-allowed';
+            } else {
+                metrosFieldsContainer.style.display = 'none';
+                costInput.readOnly = false;
+                priceInput.readOnly = false;
+                costInput.style.background = '';
+                priceInput.style.background = '';
+                costInput.style.cursor = '';
+                priceInput.style.cursor = '';
+            }
+            calcUtility();
+        });
+
+        costoM2Input.addEventListener('input', function() {
+            if (ventaMetrosCheckbox.checked) {
+                costInput.value = this.value;
+                calcUtility();
+            }
+        });
+
+        precioM2Input.addEventListener('input', function() {
+            if (ventaMetrosCheckbox.checked) {
+                priceInput.value = this.value;
+                calcUtility();
+            }
+        });
 
         function fetchNextSku() {
             fetch('api/get_next_sku.php')
@@ -260,6 +328,7 @@
                 if (res.success) {
                     showToast('✅ ' + res.message, 'success');
                     this.reset();
+                    ventaMetrosCheckbox.dispatchEvent(new Event('change'));
                     priceInput.value = '0.00';
                     utilInput.value = '0.00';
                     fetchNextSku();
