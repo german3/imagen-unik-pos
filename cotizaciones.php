@@ -140,9 +140,10 @@
                 </div>
             </div>
             
-            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid #eee; background: #f8f9fa; border-radius: 0 0 var(--radius) var(--radius); display: flex; gap: 1rem; justify-content: flex-end;">
-                <button class="btn btn-primary" onclick="exportHtml2Pdf()">📥 Descargar PDF</button>
-                <button class="btn btn-success" onclick="printQuote()">🖨️ Imprimir</button>
+            <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid #eee; background: #f8f9fa; border-radius: 0 0 var(--radius) var(--radius); display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+                <button id="btn-enviar-venta" class="btn" onclick="sendToPos()" style="background: linear-gradient(135deg, #34a853, #1e7e34); color: white; font-weight: 700; padding: 0.6rem 1.4rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 8px rgba(52,168,83,0.35); transition: opacity 0.2s;">&#128722; Enviar a Venta</button>
+                <button class="btn btn-primary" onclick="exportHtml2Pdf()">&#128229; Descargar PDF</button>
+                <button class="btn btn-success" onclick="printQuote()">&#128424;&#65039; Imprimir</button>
             </div>
         </div>
     </div>
@@ -188,12 +189,17 @@
                 .catch(err => console.error(err));
         }
 
+        let currentQuoteData = null;
+
         function openQuote(id) {
+            currentQuoteData = null;
             fetch(`api/get_quote_details.php?id=${id}`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
                         const m = data.master;
+                        currentQuoteData = data;
+
                         document.getElementById('print-id').textContent = 'F-' + String(m.folio || m.id).padStart(4,'0');
                         document.getElementById('print-date').textContent = m.fecha_hora;
                         document.getElementById('print-client').textContent = m.cliente_nombre;
@@ -202,7 +208,7 @@
                         tbody.innerHTML = '';
                         data.detalles.forEach(d => {
                             const medidas = (d.alto && d.ancho)
-                                ? `<br><small style="color:#1a73e8;font-size:0.78rem;">📐 Medidas: ${parseFloat(d.alto).toFixed(2)} m × ${parseFloat(d.ancho).toFixed(2)} m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
+                                ? `<br><small style="color:#1a73e8;font-size:0.78rem;">&#128208; Medidas: ${parseFloat(d.alto).toFixed(2)} m × ${parseFloat(d.ancho).toFixed(2)} m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
                                 : '';
                             tbody.innerHTML += `
                                 <tr>
@@ -223,6 +229,13 @@
                         document.getElementById('quote-modal').style.display = 'flex';
                     }
                 });
+        }
+
+        function sendToPos() {
+            if (!currentQuoteData) return;
+            // Store the quote detalles + master in sessionStorage so POS can pick it up
+            sessionStorage.setItem('pos_from_quote', JSON.stringify(currentQuoteData));
+            window.location.href = 'index.php';
         }
 
         function closeModal() {

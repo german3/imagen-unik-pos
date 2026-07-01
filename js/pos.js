@@ -27,7 +27,93 @@ document.addEventListener('DOMContentLoaded', () => {
     if(ivaRateEl) {
         ivaRateEl.addEventListener('change', calculateTotals);
     }
+
+    // ── Load quote from cotizaciones.php if redirected ───────────────────
+    loadQuoteFromSession();
 });
+
+// ── Pre-fill POS from a saved quote (via sessionStorage) ─────────────────────
+function loadQuoteFromSession() {
+    const raw = sessionStorage.getItem('pos_from_quote');
+    if (!raw) return;
+
+    try {
+        const quoteData = JSON.parse(raw);
+        sessionStorage.removeItem('pos_from_quote'); // consume once
+
+        const { master, detalles } = quoteData;
+        if (!detalles || detalles.length === 0) return;
+
+        // ── Set client ───────────────────────────────────────────────────
+        if (master && master.cliente_id && master.cliente_id != 1) {
+            const clientIdInput   = document.getElementById('client-id');
+            const clientSearchInput = document.getElementById('client-search');
+            if (clientIdInput)    clientIdInput.value   = master.cliente_id;
+            if (clientSearchInput) clientSearchInput.value = master.cliente_nombre || '';
+        }
+
+        // ── Clear existing empty rows and fill with quote items ───────────
+        // Remove current rows (there should be 1 empty added on init)
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        lineCounter = 1;
+
+        detalles.forEach(d => {
+            addNewRow(); // creates the row and attaches events
+            const tr = tbody.lastElementChild;
+
+            const isMetros = !!(d.alto && d.ancho && parseFloat(d.alto) > 0 && parseFloat(d.ancho) > 0);
+
+            // Fill product name and hidden id
+            tr.querySelector('.product-search').value = d.nombre_producto || '';
+            tr.querySelector('.product-id').value     = d.producto_id || '';
+
+            // Fill cost and discount
+            tr.querySelector('.cost').value     = parseFloat(d.costo_unitario || 0).toFixed(2);
+            tr.querySelector('.disc-perc').value = parseFloat(d.descuento_porcentaje || 0);
+
+            if (isMetros) {
+                setMetrosMode(tr, true);
+                tr.querySelector('.alto').value  = parseFloat(d.alto).toFixed(2);
+                tr.querySelector('.ancho').value = parseFloat(d.ancho).toFixed(2);
+                // Recalculate qty = alto × ancho
+                const a = parseFloat(d.alto);
+                const b = parseFloat(d.ancho);
+                tr.querySelector('.qty').value = (a * b).toFixed(4);
+            } else {
+                setMetrosMode(tr, false);
+                tr.querySelector('.qty').value = parseFloat(d.cantidad || 1).toFixed(2);
+            }
+
+            calculateRow(tr);
+        });
+
+        calculateTotals();
+
+        // ── Show a banner so the user knows it came from a quote ─────────
+        const banner = document.createElement('div');
+        banner.id = 'quote-banner';
+        banner.innerHTML = `
+            <span>📋 Cotización cargada — revisa los productos y confirma la venta cuando estés listo.</span>
+            <button onclick="document.getElementById('quote-banner').remove()" style="background:none;border:none;color:white;font-size:1.1rem;cursor:pointer;line-height:1;">✕</button>
+        `;
+        banner.style.cssText = `
+            position:fixed; top:0; left:0; right:0; z-index:9999;
+            background: linear-gradient(90deg,#1a73e8,#0d47a1);
+            color:white; padding:0.75rem 2rem;
+            display:flex; align-items:center; justify-content:space-between;
+            font-weight:600; font-size:0.95rem;
+            box-shadow:0 2px 12px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease;
+        `;
+        document.body.prepend(banner);
+        setTimeout(() => { if (banner.parentNode) banner.remove(); }, 6000);
+
+    } catch (e) {
+        console.error('Error loading quote from session:', e);
+    }
+}
+
+
 
 function fetchNextSaleId() {
     const folioInput = document.getElementById('folio-venta');
