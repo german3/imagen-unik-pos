@@ -96,6 +96,8 @@
         .modal-box-header h3 { margin: 0; font-size: 1.1rem; }
         .modal-body { padding: 1.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-height: 65vh; overflow-y: auto; }
         .modal-body .full { grid-column: 1 / -1; }
+        .btn-doc { display: inline-flex; align-items: center; gap: 0.3rem; background: #e6f4ea; color: #137333; padding: 4px 10px; border-radius: 6px; text-decoration: none; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+        .btn-doc:hover { background: #137333; color: white; }
         .mfield label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #5f6368; margin-bottom: 0.4rem; }
         .mfield input { width: 100%; padding: 0.6rem 0.9rem; border: 1.5px solid #e0e0e0; border-radius: 8px; font-family: inherit; font-size: 0.92rem; transition: border-color 0.2s; }
         .mfield input:focus { outline: none; border-color: #1a73e8; }
@@ -150,6 +152,7 @@
                         <th>Teléfono</th>
                         <th>Correo</th>
                         <th>RFC</th>
+                        <th>Documento</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -182,6 +185,11 @@
                 <div class="mfield"><label>Número</label><input type="text" id="edit-numero"></div>
                 <div class="mfield"><label>Colonia</label><input type="text" id="edit-colonia"></div>
                 <div class="mfield"><label>Código Postal</label><input type="text" id="edit-cp"></div>
+                <div class="mfield full">
+                    <label>Documento Adjunto (Opcional)</label>
+                    <div id="edit-doc-status" style="margin-bottom: 0.5rem; font-size: 0.88rem; display: flex; align-items: center; gap: 0.5rem;"></div>
+                    <input type="file" id="edit-documento" style="padding: 0.4rem 0;">
+                </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEdit()">Cancelar</button>
@@ -243,12 +251,16 @@
 
             clients.forEach(c => {
                 const tr = document.createElement('tr');
+                const docLink = c.documento 
+                    ? `<a href="${c.documento}" target="_blank" class="btn-doc" title="Ver Documento">📄 Ver Doc</a>` 
+                    : '<span style="color:#bbb">—</span>';
                 tr.innerHTML = `
                     <td><span class="badge-id">${c.id}</span></td>
                     <td><strong>${c.nombre}</strong> ${c.apellidos}</td>
                     <td>${c.telefono || '<span style="color:#bbb">—</span>'}</td>
                     <td>${c.correo_electronico || '<span style="color:#bbb">—</span>'}</td>
                     <td>${c.rfc || '<span style="color:#bbb">—</span>'}</td>
+                    <td>${docLink}</td>
                     <td class="actions">
                         <button class="btn-icon edit" onclick='openEdit(${JSON.stringify(c)})'>✏️ Editar</button>
                         <button class="btn-icon del" onclick='openConfirm(${c.id}, "${c.nombre} ${c.apellidos}")'>🗑️ Eliminar</button>
@@ -281,29 +293,43 @@
             document.getElementById('edit-numero').value   = c.numero_casa || '';
             document.getElementById('edit-colonia').value  = c.colonia || '';
             document.getElementById('edit-cp').value       = c.codigo_postal || '';
+            
+            const statusEl = document.getElementById('edit-doc-status');
+            const fileInput = document.getElementById('edit-documento');
+            fileInput.value = '';
+            if (c.documento) {
+                statusEl.innerHTML = `<span>Actualmente:</span> <a href="${c.documento}" target="_blank" style="color: #1a73e8; font-weight: 600; text-decoration: underline;">📄 Ver Documento</a>`;
+            } else {
+                statusEl.innerHTML = `<span style="color: #bbb;">Sin documento adjunto</span>`;
+            }
+
             document.getElementById('edit-modal').style.display = 'flex';
         }
         function closeEdit() { document.getElementById('edit-modal').style.display = 'none'; }
 
         function saveEdit() {
-            const payload = {
-                id:                  document.getElementById('edit-id').value,
-                nombre:              document.getElementById('edit-nombre').value,
-                apellidos:           document.getElementById('edit-apellidos').value,
-                telefono:            document.getElementById('edit-telefono').value,
-                correo_electronico:  document.getElementById('edit-correo').value,
-                rfc:                 document.getElementById('edit-rfc').value,
-                curp:                document.getElementById('edit-curp').value,
-                razon_social:        document.getElementById('edit-razon').value,
-                calle:               document.getElementById('edit-calle').value,
-                numero_casa:         document.getElementById('edit-numero').value,
-                colonia:             document.getElementById('edit-colonia').value,
-                codigo_postal:       document.getElementById('edit-cp').value
-            };
+            const formData = new FormData();
+            formData.append('id', document.getElementById('edit-id').value);
+            formData.append('nombre', document.getElementById('edit-nombre').value);
+            formData.append('apellidos', document.getElementById('edit-apellidos').value);
+            formData.append('telefono', document.getElementById('edit-telefono').value);
+            formData.append('correo_electronico', document.getElementById('edit-correo').value);
+            formData.append('rfc', document.getElementById('edit-rfc').value);
+            formData.append('curp', document.getElementById('edit-curp').value);
+            formData.append('razon_social', document.getElementById('edit-razon').value);
+            formData.append('calle', document.getElementById('edit-calle').value);
+            formData.append('numero_casa', document.getElementById('edit-numero').value);
+            formData.append('colonia', document.getElementById('edit-colonia').value);
+            formData.append('codigo_postal', document.getElementById('edit-cp').value);
+            
+            const fileInput = document.getElementById('edit-documento');
+            if (fileInput.files.length > 0) {
+                formData.append('documento', fileInput.files[0]);
+            }
+
             fetch('api/update_client.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: formData
             })
             .then(r => r.json())
             .then(res => {
@@ -314,7 +340,8 @@
                 } else {
                     showToast('❌ ' + res.message, 'error');
                 }
-            });
+            })
+            .catch(() => showToast('❌ Error de conexión.', 'error'));
         }
 
         // ---- DELETE ----

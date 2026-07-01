@@ -108,6 +108,12 @@ try {
          $pdo->exec("ALTER TABLE ventas ADD COLUMN motivo_cancelacion TEXT NULL");
      }
 
+     // Auto-migrate: add documento to clientes if it doesn't exist
+     $cols_c = $pdo->query("DESCRIBE clientes")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('documento', $cols_c)) {
+         $pdo->exec("ALTER TABLE clientes ADD COLUMN documento VARCHAR(255) NULL");
+     }
+
      // ── Folio Global (contador compartido entre ventas y cotizaciones) ──────
      // 1. Tabla secuenciadora
      $pdo->exec("CREATE TABLE IF NOT EXISTS folio_global (

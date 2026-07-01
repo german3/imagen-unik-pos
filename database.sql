@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS clientes (
     rfc VARCHAR(20),
     razon_social VARCHAR(150),
     curp VARCHAR(20),
+    documento VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -203,6 +203,15 @@
                         </div>
                     </div>
 
+                    <!-- Documentación -->
+                    <p class="section-title">Documentación</p>
+                    <div class="field-group fg-2">
+                        <div class="field">
+                            <label>Adjuntar Documento (Opcional)</label>
+                            <input type="file" id="documento" name="documento" style="padding: 0.4rem 0; border: none; background: transparent; box-shadow: none;">
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="form-footer">
@@ -228,12 +237,10 @@
         document.getElementById('clientForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
-            const data = Object.fromEntries(formData.entries());
 
             fetch('api/save_client.php', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formData
             })
             .then(res => res.json())
             .then(res => {
