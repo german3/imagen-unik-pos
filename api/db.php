@@ -69,6 +69,18 @@ try {
         FOREIGN KEY (corte_id) REFERENCES cortes_caja(id) ON DELETE CASCADE
      )");
 
+     // Auto-migrate: add total_ingresos to cortes_caja if it doesn't exist
+     $cols_cc = $pdo->query("DESCRIBE cortes_caja")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('total_ingresos', $cols_cc)) {
+         $pdo->exec("ALTER TABLE cortes_caja ADD COLUMN total_ingresos DECIMAL(10,2) DEFAULT 0");
+     }
+
+     // Auto-migrate: add tipo to gastos_caja if it doesn't exist
+     $cols_gc = $pdo->query("DESCRIBE gastos_caja")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('tipo', $cols_gc)) {
+         $pdo->exec("ALTER TABLE gastos_caja ADD COLUMN tipo VARCHAR(20) DEFAULT 'retiro'");
+     }
+
      // Auto-migrate: add venta_por_metros, costo_m2, precio_m2 to productos if they don't exist
      $columns = $pdo->query("DESCRIBE productos")->fetchAll(PDO::FETCH_COLUMN);
      if (!in_array('venta_por_metros', $columns)) {

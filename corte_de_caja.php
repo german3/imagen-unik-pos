@@ -355,6 +355,16 @@
                 </div>
             </div>
 
+            <!-- 3c · MOVIMIENTOS EXTRA (INGRESOS/RETIROS) ──────────────── -->
+            <div class="corte-card no-print">
+                <h2>💸 Movimientos Extra</h2>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
+                    Registra ingresos adicionales o retiros (gastos) de la caja.
+                </p>
+                <div id="movimientos-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem;"></div>
+                <button class="btn btn-secondary" onclick="addMovimientoRow()" style="width:100%; font-size:0.85rem; padding:0.4rem; border-style:dashed;">+ Añadir Movimiento</button>
+            </div>
+
             <!-- 4 · RESUMEN DE CIERRE ─────────────────────────────────── -->
             <div class="corte-card">
                 <h2>📊 Resumen de cierre</h2>
@@ -366,6 +376,14 @@
                     <tr>
                         <td class="label">+ Total ventas</td>
                         <td class="value" id="r-ventas">$0.00</td>
+                    </tr>
+                    <tr id="tr-ingresos">
+                        <td class="label" style="color:var(--success);">+ Ingresos extras</td>
+                        <td class="value" id="r-ingresos" style="color:var(--success);">$0.00</td>
+                    </tr>
+                    <tr id="tr-retiros">
+                        <td class="label" style="color:var(--danger);">- Retiros (Gastos)</td>
+                        <td class="value" id="r-retiros" style="color:var(--danger);">$0.00</td>
                     </tr>
                     <tr class="separator"><td></td><td></td></tr>
                     <tr>
@@ -410,22 +428,64 @@
     const fmt = n => '$' + parseFloat(n || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 
     let ventasData   = { totales:{num_ventas:0,subtotal_ventas:0,descuentos_ventas:0,iva_ventas:0,total_ventas:0}, ventas:[] };
-    let gastoCounter = 0;
+    let movCounter = 0;
 
-    // ── Conteo de denominaciones removido ──
+    // ── Movimientos de Caja ───────────────────────────────────────────────
+    function addMovimientoRow() {
+        movCounter++;
+        const id = 'mov-' + movCounter;
+        const div = document.createElement('div');
+        div.className = 'gasto-row'; // reusing CSS
+        div.id = id;
+        div.innerHTML = `
+            <select class="mov-tipo" style="padding:0.45rem; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:0.8rem; background:white;">
+                <option value="retiro">Retiro</option>
+                <option value="ingreso">Ingreso</option>
+            </select>
+            <input type="text" class="mov-desc" placeholder="Descripción..." style="width:100%;">
+            <input type="number" class="mov-monto monto-input" placeholder="0.00" min="0" step="0.01" style="width:100%;">
+            <button class="btn-del-gasto" onclick="document.getElementById('${id}').remove(); recalcResumen();" title="Eliminar">×</button>
+        `;
+        // We use grid layout: it currently expects 1fr 110px 34px (3 columns). We need to adjust styles for 4 columns inline.
+        div.style.gridTemplateColumns = '80px 1fr 90px 34px';
+        
+        document.getElementById('movimientos-list').appendChild(div);
+        
+        const inputs = div.querySelectorAll('input, select');
+        inputs.forEach(inp => inp.addEventListener('input', recalcResumen));
+    }
 
-    // ── Gastos removido ──
+    function getMovimientos() {
+        const rows = document.querySelectorAll('#movimientos-list .gasto-row');
+        let ingresos = 0, retiros = 0;
+        let movimientos = [];
+        rows.forEach(r => {
+            const tipo = r.querySelector('.mov-tipo').value;
+            const desc = r.querySelector('.mov-desc').value.trim();
+            const monto = parseFloat(r.querySelector('.mov-monto').value) || 0;
+            if (monto > 0) {
+                if (tipo === 'ingreso') ingresos += monto;
+                else retiros += monto;
+                if (desc) movimientos.push({ tipo, descripcion: desc, monto });
+            }
+        });
+        return { ingresos, retiros, movimientos };
+    }
 
     // ── Resumen en tiempo real ────────────────────────────────────────────
     function recalcResumen() {
         const fondo     = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
+        const movs      = getMovimientos();
         const contado   = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado  = fondo + totalVent;
+        
+        const esperado  = fondo + totalVent + movs.ingresos - movs.retiros;
         const diferencia= contado - esperado;
 
         document.getElementById('r-fondo').textContent    = fmt(fondo);
         document.getElementById('r-ventas').textContent   = fmt(totalVent);
+        document.getElementById('r-ingresos').textContent = fmt(movs.ingresos);
+        document.getElementById('r-retiros').textContent  = fmt(movs.retiros);
         document.getElementById('r-esperado').textContent = fmt(esperado);
         document.getElementById('r-contado').textContent  = fmt(contado);
 
