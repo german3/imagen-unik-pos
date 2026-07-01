@@ -99,13 +99,16 @@ try {
          $pdo->exec("ALTER TABLE cotizaciones_detalle ADD COLUMN ancho DECIMAL(10,2) NULL");
      }
 
-     // Auto-migrate: add estatus and motivo_cancelacion to ventas
+     // Auto-migrate: add estatus, motivo_cancelacion, and metodo_pago to ventas
      $cols_v = $pdo->query("DESCRIBE ventas")->fetchAll(PDO::FETCH_COLUMN);
      if (!in_array('estatus', $cols_v)) {
          $pdo->exec("ALTER TABLE ventas ADD COLUMN estatus VARCHAR(20) NOT NULL DEFAULT 'confirmada'");
      }
      if (!in_array('motivo_cancelacion', $cols_v)) {
          $pdo->exec("ALTER TABLE ventas ADD COLUMN motivo_cancelacion TEXT NULL");
+     }
+     if (!in_array('metodo_pago', $cols_v)) {
+         $pdo->exec("ALTER TABLE ventas ADD COLUMN metodo_pago VARCHAR(50) NULL DEFAULT 'efectivo'");
      }
 
      // Auto-migrate: add documento to clientes if it doesn't exist

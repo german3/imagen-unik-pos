@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descuento_total    = $data['descuento_total'] ?? 0;
     $iva                = $data['iva'] ?? 0;
     $total              = $data['total'] ?? 0;
+    $metodo_pago        = $data['metodo_pago'] ?? 'efectivo';
     $detalles           = $data['detalles'] ?? [];
     $estatus            = in_array($data['estatus'] ?? '', ['confirmada','cancelada'])
                           ? $data['estatus'] : 'confirmada';
@@ -31,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->beginTransaction();
 
         // 1. Guardar la venta principal
-        $stmt = $pdo->prepare("INSERT INTO ventas (cliente_id, subtotal, descuento_total, iva, total, estatus, motivo_cancelacion) VALUES (?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$cliente_id, $subtotal, $descuento_total, $iva, $total, $estatus, $motivo_cancelacion]);
+        $stmt = $pdo->prepare("INSERT INTO ventas (cliente_id, subtotal, descuento_total, iva, total, estatus, motivo_cancelacion, metodo_pago) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$cliente_id, $subtotal, $descuento_total, $iva, $total, $estatus, $motivo_cancelacion, $metodo_pago]);
         $venta_id = $pdo->lastInsertId();
 
         // 1b. Asignar folio global único (compartido con cotizaciones)
