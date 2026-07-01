@@ -33,6 +33,7 @@ try {
             IFNULL(v.folio, v.id) AS folio,
             v.fecha_hora,
             v.total,
+            v.metodo_pago,
             TRIM(CONCAT(COALESCE(cl.nombre,'Público'), ' ', COALESCE(cl.apellidos,'General'))) AS cliente
         FROM ventas v
         LEFT JOIN clientes cl ON v.cliente_id = cl.id

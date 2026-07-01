@@ -311,6 +311,7 @@
                                 <th>Folio</th>
                                 <th>Fecha / Hora</th>
                                 <th>Cliente</th>
+                                <th>Pago</th>
                                 <th class="right">Total</th>
                             </tr>
                         </thead>
@@ -651,10 +652,23 @@
                         const hora  = dt.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
                         const fecha = dt.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'});
                         const folioText = 'F-' + String(v.folio || v.id).padStart(4, '0');
+                        
+                        let badgeBg = '#eee', badgeColor = '#666';
+                        const mp = (v.metodo_pago || 'efectivo').toLowerCase();
+                        if (mp === 'efectivo') {
+                            badgeBg = '#e6f4ea'; badgeColor = '#137333';
+                        } else if (mp === 'transferencia') {
+                            badgeBg = '#e8f0fe'; badgeColor = '#1967d2';
+                        } else if (mp === 'tarjeta') {
+                            badgeBg = '#fef7e0'; badgeColor = '#b06000';
+                        }
+                        const pagoBadge = `<span style="background:${badgeBg}; color:${badgeColor}; padding:0.15rem 0.4rem; border-radius:4px; font-size:0.75rem; font-weight:600; text-transform:uppercase;">${mp}</span>`;
+
                         tr.innerHTML = `
                             <td>${folioText}</td>
                             <td>${fecha} ${hora}</td>
                             <td>${v.cliente}</td>
+                            <td>${pagoBadge}</td>
                             <td class="right">${fmt(v.total)}</td>
                         `;
                         tbody.appendChild(tr);
