@@ -359,10 +359,12 @@
             <div class="corte-card no-print">
                 <h2>💸 Movimientos Extra</h2>
                 <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
-                    Registra ingresos adicionales o retiros (gastos) de la caja.
+                    Ingresos adicionales o retiros de la caja.
                 </p>
-                <div id="movimientos-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem;"></div>
-                <button class="btn btn-secondary" onclick="addMovimientoRow()" style="width:100%; font-size:0.85rem; padding:0.4rem; border-style:dashed;">+ Añadir Movimiento</button>
+                <div id="movimientos-list" style="display:flex; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem;">
+                    <div style="text-align:center; color:var(--text-muted); font-size:0.85rem;">Ningún movimiento registrado.</div>
+                </div>
+                <button class="btn btn-secondary" onclick="abrirModalMovimiento()" style="width:100%; font-size:0.85rem; padding:0.4rem; border-style:dashed;">+ Añadir Movimiento</button>
             </div>
 
             <!-- 4 · RESUMEN DE CIERRE ─────────────────────────────────── -->
@@ -418,6 +420,39 @@
 
     </div><!-- /.corte-grid -->
 
+    <!-- ══ MODAL MOVIMIENTO ════════════════════════════════════════════════ -->
+    <div class="overlay" id="modal-movimiento" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:1.5rem; border-radius:12px; width:90%; max-width:400px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top:0; color:var(--text-main); font-size:1.1rem; border-bottom:1px solid var(--border); padding-bottom:0.5rem; margin-bottom:1rem;">Registrar Movimiento</h3>
+            
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.3rem;">Tipo de Movimiento</label>
+                <select id="modal-mov-tipo" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:1rem;">
+                    <option value="ingreso">Ingreso (Añadir efectivo)</option>
+                    <option value="retiro">Retiro (Gasto / Salida)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom:1rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.3rem;">Monto</label>
+                <div class="money-input-wrap">
+                    <span class="currency-prefix" style="left:0.6rem;">$</span>
+                    <input type="number" id="modal-mov-monto" min="0" step="0.01" placeholder="0.00" style="padding-left:1.5rem; font-size:1.1rem;">
+                </div>
+            </div>
+
+            <div style="margin-bottom:1.5rem;">
+                <label style="display:block; font-size:0.85rem; font-weight:600; color:var(--text-muted); margin-bottom:0.3rem;">Motivo / Descripción</label>
+                <textarea id="modal-mov-desc" rows="3" style="width:100%; padding:0.6rem; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.9rem; resize:vertical;"></textarea>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                <button class="btn btn-secondary" onclick="cerrarModalMovimiento()" style="padding:0.6rem 1rem;">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarMovimiento()" id="btn-save-mov" style="padding:0.6rem 1rem;">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ PRINT AREA ══════════════════════════════════════════════════════ -->
     <div id="print-area">
         <div class="print-ticket" id="ticket-content"></div>
@@ -427,56 +462,119 @@
     // ── Helpers ───────────────────────────────────────────────────────────
     const fmt = n => '$' + parseFloat(n || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-    let ventasData   = { totales:{num_ventas:0,subtotal_ventas:0,descuentos_ventas:0,iva_ventas:0,total_ventas:0}, ventas:[] };
-    let movCounter = 0;
-
-    // ── Movimientos de Caja ───────────────────────────────────────────────
-    function addMovimientoRow() {
-        movCounter++;
-        const id = 'mov-' + movCounter;
-        const div = document.createElement('div');
-        div.className = 'gasto-row'; // reusing CSS
-        div.id = id;
-        div.innerHTML = `
-            <select class="mov-tipo" style="padding:0.45rem; border:1.5px solid var(--border); border-radius:7px; font-family:inherit; font-size:0.8rem; background:white;">
-                <option value="retiro">Retiro</option>
-                <option value="ingreso">Ingreso</option>
-            </select>
-            <input type="text" class="mov-desc" placeholder="Descripción..." style="width:100%;">
-            <input type="number" class="mov-monto monto-input" placeholder="0.00" min="0" step="0.01" style="width:100%;">
-            <button class="btn-del-gasto" onclick="document.getElementById('${id}').remove(); recalcResumen();" title="Eliminar">×</button>
-        `;
-        // We use grid layout: it currently expects 1fr 110px 34px (3 columns). We need to adjust styles for 4 columns inline.
-        div.style.gridTemplateColumns = '80px 1fr 90px 34px';
-        
-        document.getElementById('movimientos-list').appendChild(div);
-        
-        const inputs = div.querySelectorAll('input, select');
-        inputs.forEach(inp => inp.addEventListener('input', recalcResumen));
+    let ventasData   = { totales:{num_ventas:0,subtotal_ventas:0,descuentos_ventas:0,iva_ventas:0,total_ventas:0}, ventas:[], movimientos:[] };
+    
+    // ── Movimientos de Caja Modal ─────────────────────────────────────────
+    function abrirModalMovimiento() {
+        document.getElementById('modal-mov-tipo').value = 'retiro';
+        document.getElementById('modal-mov-monto').value = '';
+        document.getElementById('modal-mov-desc').value = '';
+        document.getElementById('modal-movimiento').style.display = 'flex';
+        setTimeout(() => document.getElementById('modal-mov-monto').focus(), 100);
     }
 
-    function getMovimientos() {
-        const rows = document.querySelectorAll('#movimientos-list .gasto-row');
-        let ingresos = 0, retiros = 0;
-        let movimientos = [];
-        rows.forEach(r => {
-            const tipo = r.querySelector('.mov-tipo').value;
-            const desc = r.querySelector('.mov-desc').value.trim();
-            const monto = parseFloat(r.querySelector('.mov-monto').value) || 0;
-            if (monto > 0) {
-                if (tipo === 'ingreso') ingresos += monto;
-                else retiros += monto;
-                if (desc) movimientos.push({ tipo, descripcion: desc, monto });
+    function cerrarModalMovimiento() {
+        document.getElementById('modal-movimiento').style.display = 'none';
+    }
+
+    async function guardarMovimiento() {
+        const tipo = document.getElementById('modal-mov-tipo').value;
+        const monto = parseFloat(document.getElementById('modal-mov-monto').value) || 0;
+        const desc = document.getElementById('modal-mov-desc').value.trim();
+
+        if (monto <= 0 || !desc) {
+            alert('Por favor, ingresa un monto mayor a 0 y una descripción.');
+            return;
+        }
+
+        const btn = document.getElementById('btn-save-mov');
+        btn.textContent = 'Guardando...'; btn.disabled = true;
+
+        try {
+            const res = await fetch('api/save_movimiento.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tipo, monto, descripcion: desc })
+            });
+            const data = await res.json();
+            if (data.success) {
+                cerrarModalMovimiento();
+                cargarVentas(); // Reload the data
+            } else {
+                alert('Error: ' + data.message);
             }
+        } catch(e) { alert('Error de red'); }
+        btn.textContent = 'Guardar'; btn.disabled = false;
+    }
+
+    async function eliminarMovimiento(id) {
+        if (!confirm('¿Eliminar este movimiento?')) return;
+        try {
+            const res = await fetch('api/delete_movimiento.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const data = await res.json();
+            if (data.success) {
+                cargarVentas();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        } catch(e) { alert('Error de red'); }
+    }
+
+    function renderMovimientos() {
+        const list = document.getElementById('movimientos-list');
+        list.innerHTML = '';
+        if (!ventasData.movimientos || ventasData.movimientos.length === 0) {
+            list.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.85rem;">Ningún movimiento registrado.</div>';
+            return;
+        }
+
+        ventasData.movimientos.forEach(m => {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.justifyContent = 'space-between';
+            div.style.alignItems = 'center';
+            div.style.padding = '0.5rem';
+            div.style.border = '1px solid var(--border)';
+            div.style.borderRadius = '8px';
+            div.style.background = 'rgba(255,255,255,0.6)';
+            div.style.fontSize = '0.85rem';
+            
+            const isIngreso = m.tipo === 'ingreso';
+            const color = isIngreso ? 'var(--success)' : 'var(--danger)';
+            const sign = isIngreso ? '+' : '-';
+            
+            div.innerHTML = `
+                <div style="flex:1; overflow:hidden;">
+                    <strong style="color:${color}; text-transform:uppercase; font-size:0.75rem;">${isIngreso ? 'Ingreso' : 'Retiro'}</strong><br>
+                    <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:inline-block; width:100%; color:var(--text-main); margin-top:2px;">${m.descripcion}</span>
+                </div>
+                <div style="font-weight:700; color:${color}; padding:0 0.5rem;">${sign}${fmt(m.monto)}</div>
+                <button onclick="eliminarMovimiento(${m.id})" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem; padding:0 0.3rem;" title="Eliminar">×</button>
+            `;
+            list.appendChild(div);
         });
-        return { ingresos, retiros, movimientos };
+    }
+
+    function getMovimientosTotales() {
+        let ingresos = 0, retiros = 0;
+        if (ventasData.movimientos) {
+            ventasData.movimientos.forEach(m => {
+                if (m.tipo === 'ingreso') ingresos += parseFloat(m.monto);
+                else retiros += parseFloat(m.monto);
+            });
+        }
+        return { ingresos, retiros };
     }
 
     // ── Resumen en tiempo real ────────────────────────────────────────────
     function recalcResumen() {
         const fondo     = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
-        const movs      = getMovimientos();
+        const movs      = getMovimientosTotales();
         const contado   = parseFloat(document.getElementById('efectivo-contado').value) || 0;
         
         const esperado  = fondo + totalVent + movs.ingresos - movs.retiros;
@@ -562,6 +660,7 @@
                         tbody.appendChild(tr);
                     });
                 }
+                renderMovimientos();
                 recalcResumen();
             })
             .catch(err => {
@@ -572,36 +671,35 @@
             });
     }
 
-    // ── Guardar corte ─────────────────────────────────────────────────────
-    function cerrarCorte() {
-        const inicio = document.getElementById('fecha-inicio').value;
-        const fin    = document.getElementById('fecha-fin').value;
-        if (!inicio || !fin) { alert('Selecciona las fechas y carga las ventas primero.'); return; }
+    // ── Cerrar corte ──────────────────────────────────────────────────────
+    document.getElementById('btn-cerrar-corte').addEventListener('click', () => {
+        if (!ventasData.ventas.length && (!ventasData.movimientos || !ventasData.movimientos.length)) {
+            if (!confirm('No hay ventas ni movimientos. ¿Seguro que deseas hacer el corte de caja en cero?')) return;
+        }
 
-        const t          = ventasData.totales;
-        const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
-        const totalGasto = 0;
-        const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado   = fondo + parseFloat(t.total_ventas || 0);
-        const diferencia = contado - esperado;
-
-        const gastos = [];
+        const movs = getMovimientosTotales();
+        const fondo   = parseFloat(document.getElementById('fondo-inicial').value) || 0;
+        const contado = parseFloat(document.getElementById('efectivo-contado').value) || 0;
+        const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
+        const esperado  = fondo + totalVent + movs.ingresos - movs.retiros;
+        const diferencia= contado - esperado;
 
         const payload = {
-            fecha_inicio:      `${inicio} 00:00:00`,
-            fecha_fin:         `${fin} 23:59:59`,
+            fecha_inicio:      document.getElementById('fecha-inicio').value + ' 00:00:00',
+            fecha_fin:         document.getElementById('fecha-fin').value + ' 23:59:59',
             fondo_inicial:     fondo,
-            num_ventas:        parseInt(t.num_ventas) || 0,
-            subtotal_ventas:   parseFloat(t.subtotal_ventas)   || 0,
-            descuentos_ventas: parseFloat(t.descuentos_ventas) || 0,
-            iva_ventas:        parseFloat(t.iva_ventas)        || 0,
-            total_ventas:      parseFloat(t.total_ventas)      || 0,
-            total_gastos:      totalGasto,
+            num_ventas:        ventasData.totales.num_ventas,
+            subtotal_ventas:   ventasData.totales.subtotal_ventas,
+            descuentos_ventas: ventasData.totales.descuentos_ventas,
+            iva_ventas:        ventasData.totales.iva_ventas,
+            total_ventas:      totalVent,
+            total_ingresos:    movs.ingresos,
+            total_gastos:      movs.retiros,
             efectivo_esperado: esperado,
             efectivo_contado:  contado,
             diferencia:        diferencia,
             notas:             document.getElementById('notas').value.trim(),
-            gastos:            gastos,
+            gastos:            []
         };
 
         const btn = document.getElementById('btn-cerrar-corte');
@@ -631,7 +729,7 @@
             console.error(err);
             alert('Error de conexión.');
         });
-    }
+    });
 
     // ── Build ticket ──────────────────────────────────────────────────────
     function buildTicket(p) {
@@ -657,6 +755,8 @@
             <div class="pr bold"><span>Total ventas:</span><span>${fmt(p.total_ventas)}</span></div>
             <hr>
             <div class="pr"><span>Fondo inicial:</span><span>${fmt(p.fondo_inicial)}</span></div>
+            <div class="pr"><span>Ingresos:</span><span>${fmt(p.total_ingresos)}</span></div>
+            <div class="pr"><span>Retiros:</span><span>-${fmt(p.total_gastos)}</span></div>
             <div class="pr bold"><span>Efectivo esperado:</span><span>${fmt(p.efectivo_esperado)}</span></div>
             <div class="pr bold"><span>Efectivo contado:</span><span>${fmt(p.efectivo_contado)}</span></div>
             <hr>
@@ -667,22 +767,6 @@
     }
 
     function imprimirCorte() {
-        const t          = ventasData.totales;
-        const fondo      = parseFloat(document.getElementById('fondo-inicial').value) || 0;
-        const totalGasto = 0;
-        const contado    = parseFloat(document.getElementById('efectivo-contado').value) || 0;
-        const esperado   = fondo + parseFloat(t.total_ventas || 0);
-        const gastos     = [];
-        buildTicket({
-            fecha_inicio:`${document.getElementById('fecha-inicio').value} 00:00:00`,
-            fecha_fin:`${document.getElementById('fecha-fin').value} 23:59:59`,
-            fondo_inicial:fondo, num_ventas:t.num_ventas||0,
-            subtotal_ventas:t.subtotal_ventas||0, descuentos_ventas:t.descuentos_ventas||0,
-            iva_ventas:t.iva_ventas||0, total_ventas:t.total_ventas||0,
-            total_gastos:totalGasto, efectivo_esperado:esperado,
-            efectivo_contado:contado, diferencia:contado - esperado,
-            notas:document.getElementById('notas').value.trim(), gastos,
-        });
         window.print();
     }
 

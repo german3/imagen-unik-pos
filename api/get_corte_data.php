@@ -42,10 +42,20 @@ try {
     $stmtVentas->execute([$dt_inicio, $dt_fin]);
     $ventas = $stmtVentas->fetchAll(PDO::FETCH_ASSOC);
 
+    // ── Floating movements (Ingresos/Retiros) ─────────────────────────────
+    $stmtMov = $pdo->query("
+        SELECT id, descripcion, monto, tipo, fecha_hora
+        FROM gastos_caja
+        WHERE corte_id IS NULL
+        ORDER BY fecha_hora ASC
+    ");
+    $movimientos = $stmtMov->fetchAll(PDO::FETCH_ASSOC);
+
     echo json_encode([
-        'success' => true,
-        'totales' => $totales,
-        'ventas'  => $ventas,
+        'success'      => true,
+        'totales'      => $totales,
+        'ventas'       => $ventas,
+        'movimientos'  => $movimientos
     ]);
 
 } catch (\PDOException $e) {

@@ -46,21 +46,9 @@ try {
     ]);
     $corte_id = $pdo->lastInsertId();
 
-    // ── Insert expense/income rows ───────────────────────────────────────────────
-    if (!empty($gastos)) {
-        $stmtG = $pdo->prepare("
-            INSERT INTO gastos_caja (corte_id, descripcion, monto, tipo)
-            VALUES (?, ?, ?, ?)
-        ");
-        foreach ($gastos as $g) {
-            $desc  = trim($g['descripcion'] ?? '');
-            $monto = (float)($g['monto'] ?? 0);
-            $tipo  = in_array($g['tipo'] ?? '', ['ingreso', 'retiro']) ? $g['tipo'] : 'retiro';
-            if ($desc && $monto > 0) {
-                $stmtG->execute([$corte_id, $desc, $monto, $tipo]);
-            }
-        }
-    }
+    // ── Associate floating expense/income rows with this corte ────────────────
+    $stmtG = $pdo->prepare("UPDATE gastos_caja SET corte_id = ? WHERE corte_id IS NULL");
+    $stmtG->execute([$corte_id]);
 
     $pdo->commit();
     echo json_encode(['success' => true, 'corte_id' => $corte_id]);
