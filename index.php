@@ -163,7 +163,133 @@
         </div>
     </div>
 
+    <!-- ══ Modal: Confirmar Venta ═══════════════════════════════════════════ -->
+    <div id="confirm-sale-overlay" style="
+        display:none; position:fixed; inset:0;
+        background:rgba(0,0,0,0.55); backdrop-filter:blur(3px);
+        align-items:center; justify-content:center; z-index:5000;">
+
+        <div style="
+            background:white; border-radius:16px;
+            width:95%; max-width:680px; max-height:92vh;
+            box-shadow:0 24px 60px rgba(0,0,0,0.25);
+            overflow:hidden; display:flex; flex-direction:column;
+            animation: fadeInModal .25s ease;">
+
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#34a853,#1e7e34);
+                        color:white; padding:1.25rem 1.75rem;
+                        display:flex; align-items:center; gap:.75rem; flex-shrink:0;">
+                <span style="font-size:1.8rem;">🛒</span>
+                <div>
+                    <h3 style="margin:0;font-size:1.15rem;font-weight:700;">Confirmar Venta</h3>
+                    <p style="margin:.2rem 0 0;font-size:.85rem;opacity:.88;">Revisa los detalles antes de procesar.</p>
+                </div>
+            </div>
+
+            <!-- Scrollable body (printable) -->
+            <div id="confirm-sale-printable" style="overflow-y:auto; flex:1; padding:1.75rem;">
+
+                <!-- Print header (shown on print only) -->
+                <div class="print-only-header" style="display:none; text-align:center; margin-bottom:1.5rem;">
+                    <img src="Logo.jpeg" alt="IMAGEN UNIK" style="max-height:70px;margin-bottom:.5rem;"
+                         onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2NjYyIvPjwvc3ZnPg=='">
+                    <h2 style="margin:.25rem 0 0;">IMAGEN UNIK</h2>
+                    <p style="color:#666;margin:.2rem 0;">Reynosa, Tamaulipas</p>
+                </div>
+
+                <!-- Sale info row -->
+                <div style="display:flex; gap:1rem; margin-bottom:1.25rem; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:140px; background:#f8f9fa; border-radius:10px; padding:.85rem 1rem;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#5f6368;">Folio</div>
+                        <div id="csm-folio" style="font-weight:700;font-size:1.05rem;color:#1a73e8;margin-top:.2rem;">—</div>
+                    </div>
+                    <div style="flex:1; min-width:140px; background:#f8f9fa; border-radius:10px; padding:.85rem 1rem;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#5f6368;">Cliente</div>
+                        <div id="csm-cliente" style="font-weight:600;font-size:.95rem;margin-top:.2rem;">Público General</div>
+                    </div>
+                    <div style="flex:1; min-width:140px; background:#f8f9fa; border-radius:10px; padding:.85rem 1rem;">
+                        <div style="font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#5f6368;">Fecha</div>
+                        <div id="csm-fecha" style="font-weight:600;font-size:.9rem;margin-top:.2rem;">—</div>
+                    </div>
+                </div>
+
+                <!-- Items table -->
+                <table style="width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:1.25rem;">
+                    <thead>
+                        <tr style="background:#f0f4ff;">
+                            <th style="padding:.6rem .75rem;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5f6368;border-bottom:2px solid #e0e6ff;">Producto</th>
+                            <th style="padding:.6rem .75rem;text-align:center;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5f6368;border-bottom:2px solid #e0e6ff;">Cant.</th>
+                            <th style="padding:.6rem .75rem;text-align:right;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5f6368;border-bottom:2px solid #e0e6ff;">P.Unit.</th>
+                            <th style="padding:.6rem .75rem;text-align:right;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5f6368;border-bottom:2px solid #e0e6ff;">Desc.</th>
+                            <th style="padding:.6rem .75rem;text-align:right;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:#5f6368;border-bottom:2px solid #e0e6ff;">Importe</th>
+                        </tr>
+                    </thead>
+                    <tbody id="csm-items"></tbody>
+                </table>
+
+                <!-- Totals -->
+                <div style="width:280px;margin-left:auto;">
+                    <div style="display:flex;justify-content:space-between;padding:.35rem 0;font-size:.9rem;">
+                        <span style="color:#5f6368;">Subtotal:</span><span id="csm-subtotal" style="font-weight:600;">$0.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:.35rem 0;font-size:.9rem;">
+                        <span style="color:#5f6368;">Descuento:</span><span id="csm-descuento" style="font-weight:600;color:#ea4335;">$0.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:.35rem 0;font-size:.9rem;">
+                        <span style="color:#5f6368;">IVA:</span><span id="csm-iva" style="font-weight:600;">$0.00</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:.6rem 0 .35rem;margin-top:.4rem;border-top:2px solid #e0e6ff;font-size:1.15rem;font-weight:800;color:#1a73e8;">
+                        <span>TOTAL:</span><span id="csm-total">$0.00</span>
+                    </div>
+                </div>
+
+                <!-- Payment method -->
+                <div id="csm-pago-section" style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid #f0f0f0;">
+                    <p style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#5f6368;margin:0 0 .75rem;">Método de Pago</p>
+                    <div style="display:flex;gap:.75rem;flex-wrap:wrap;" id="payment-options">
+                        <label id="pay-efectivo" class="pay-opt" style="flex:1;min-width:120px;display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border:2px solid #e0e0e0;border-radius:10px;cursor:pointer;transition:all .2s;font-weight:600;font-size:.9rem;">
+                            <input type="radio" name="metodo_pago" value="efectivo" style="accent-color:#34a853;width:16px;height:16px;"> 💵 Efectivo
+                        </label>
+                        <label id="pay-transferencia" class="pay-opt" style="flex:1;min-width:120px;display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border:2px solid #e0e0e0;border-radius:10px;cursor:pointer;transition:all .2s;font-weight:600;font-size:.9rem;">
+                            <input type="radio" name="metodo_pago" value="transferencia" style="accent-color:#1a73e8;width:16px;height:16px;"> 🏦 Transferencia
+                        </label>
+                        <label id="pay-tarjeta" class="pay-opt" style="flex:1;min-width:120px;display:flex;align-items:center;gap:.5rem;padding:.75rem 1rem;border:2px solid #e0e0e0;border-radius:10px;cursor:pointer;transition:all .2s;font-weight:600;font-size:.9rem;">
+                            <input type="radio" name="metodo_pago" value="tarjeta" style="accent-color:#fbbc04;width:16px;height:16px;"> 💳 Tarjeta
+                        </label>
+                    </div>
+                    <p id="csm-pago-error" style="display:none;color:#ea4335;font-size:.82rem;margin:.4rem 0 0;">⚠ Selecciona un método de pago.</p>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:1rem 1.75rem 1.5rem;
+                        display:flex;gap:.75rem;justify-content:space-between;align-items:center;
+                        border-top:1px solid #f0f0f0;background:#fafafa;flex-shrink:0;">
+                <button class="btn btn-secondary" onclick="printSaleTicket()" style="min-width:110px;">🖨️ Imprimir</button>
+                <div style="display:flex;gap:.75rem;">
+                    <button class="btn btn-secondary" onclick="closeConfirmSaleModal()" style="min-width:100px;">Cancelar</button>
+                    <button class="btn btn-success" id="csm-ok-btn" onclick="processSale()" style="min-width:150px;font-weight:700;">✅ Confirmar Venta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <style>
+        .pay-opt:has(input:checked) {
+            border-color: #34a853 !important;
+            background: #e6f4ea;
+        }
+        @media print {
+            body * { visibility: hidden !important; }
+            #confirm-sale-printable, #confirm-sale-printable * { visibility: visible !important; }
+            #confirm-sale-printable { position: fixed; inset: 0; background: white; padding: 2rem; }
+            #csm-pago-section { display: none !important; }
+            .print-only-header { display: block !important; }
+        }
+    </style>
+
         @keyframes fadeInModal {
             from { opacity:0; transform:translateY(-12px) scale(.97); }
             to   { opacity:1; transform:translateY(0) scale(1); }

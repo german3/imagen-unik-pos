@@ -507,11 +507,11 @@ function calculateTotals() {
     document.getElementById('lbl-total').textContent        = `$${totalPagar.toFixed(2)}`;
 }
 
-// ── Build payload and send to the server ─────────────────────────────────────
-function confirmTransaction(endpoint, successMessage) {
-    const rows    = tbody.querySelectorAll('tr');
+// ── Build payload — shared between modal preview and actual save ──────────────
+function buildPayload(extraFields = {}) {
+    const rows     = tbody.querySelectorAll('tr');
     const detalles = [];
-    let hasItems  = false;
+    let hasItems   = false;
 
     rows.forEach(tr => {
         const prodName = tr.querySelector('.product-search').value.trim();
@@ -522,57 +522,151 @@ function confirmTransaction(endpoint, successMessage) {
             const anchoVal = isMetros ? (parseFloat(tr.querySelector('.ancho').value) || null) : null;
 
             detalles.push({
-                producto_id:         tr.querySelector('.product-id').value || null,
-                producto:            prodName,
-                cantidad:            parseFloat(tr.querySelector('.qty').value) || 0,
-                costo_unitario:      parseFloat(tr.querySelector('.cost').value) || 0,
+                producto_id:          tr.querySelector('.product-id').value || null,
+                producto:             prodName,
+                cantidad:             parseFloat(tr.querySelector('.qty').value) || 0,
+                costo_unitario:       parseFloat(tr.querySelector('.cost').value) || 0,
                 descuento_porcentaje: parseFloat(tr.querySelector('.disc-perc').value) || 0,
-                descuento_mxn:       parseFloat(tr.querySelector('.disc-mxn').value) || 0,
-                total_linea:         parseFloat(tr.querySelector('.line-total').value) || 0,
-                alto:                altoVal,
-                ancho:               anchoVal
+                descuento_mxn:        parseFloat(tr.querySelector('.disc-mxn').value) || 0,
+                total_linea:          parseFloat(tr.querySelector('.line-total').value) || 0,
+                alto:                 altoVal,
+                ancho:                anchoVal
             });
         }
     });
 
-    if (!hasItems) {
-        alert("Agregue al menos un producto a la tabla.");
+    if (!hasItems) return null;
+
+    const clienteIdEl = document.getElementById('client-id');
+    const clienteId   = (clienteIdEl && clienteIdEl.value && clienteIdEl.value !== '')
+                        ? parseInt(clienteIdEl.value, 10) : 1;
+    const lbl = id => parseFloat(document.getElementById(id).textContent.replace('$', '')) || 0;
+
+    return {
+        cliente_id:      clienteId,
+        subtotal:        lbl('lbl-subtotal'),
+        descuento_total: lbl('lbl-desc-total'),
+        iva:             lbl('lbl-iva'),
+        total:           lbl('lbl-total'),
+        detalles,
+        ...extraFields
+    };
+}
+
+// ── Open the confirm-sale modal (for "Confirmar" button) ─────────────────────
+function confirmTransaction(endpoint, successMessage) {
+    // For quotation endpoint, send directly without modal
+    if (endpoint !== 'api/save_sale.php') {
+        const payload = buildPayload();
+        if (!payload) { alert('Agregue al menos un producto a la tabla.'); return; }
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) { alert(successMessage); window.location.reload(); }
+            else alert('Error: ' + data.message);
+        })
+        .catch(() => alert('Error de conexión.'));
         return;
     }
 
-    const descTotalEl = document.getElementById('lbl-desc-total');
-    const lblDesc     = descTotalEl ? descTotalEl.textContent.replace('$', '') : '0';
+    // For sales: open the modal
+    openConfirmSaleModal();
+}
 
-    const clienteIdEl = document.getElementById('client-id');
-    const clienteId   = (clienteIdEl && clienteIdEl.value && clienteIdEl.value !== '') 
-                        ? parseInt(clienteIdEl.value, 10) 
-                        : 1;
+// Stores pending payload while modal is open
+let _pendingPayload = null;
 
-    const payload = {
-        cliente_id:      clienteId,
-        subtotal:        parseFloat(document.getElementById('lbl-subtotal').textContent.replace('$', '')),
-        descuento_total: parseFloat(lblDesc),
-        iva:             parseFloat(document.getElementById('lbl-iva').textContent.replace('$', '')),
-        total:           parseFloat(document.getElementById('lbl-total').textContent.replace('$', '')),
-        detalles:        detalles
-    };
+function openConfirmSaleModal() {
+    const payload = buildPayload();
+    if (!payload) {
+        alert('Agregue al menos un producto a la tabla.');
+        return;
+    }
+    _pendingPayload = payload;
 
-    fetch(endpoint, {
+    // Populate modal fields
+    const folioPrev = document.getElementById('folio-venta')?.value || '—';
+    document.getElementById('csm-folio').textContent   = folioPrev;
+    document.getElementById('csm-cliente').textContent = document.getElementById('client-search')?.value || 'Público General';
+    document.getElementById('csm-fecha').textContent   = new Date().toLocaleString('es-MX');
+
+    // Items table
+    const tbody2 = document.getElementById('csm-items');
+    tbody2.innerHTML = '';
+    payload.detalles.forEach(d => {
+        const medidasNote = (d.alto && d.ancho)
+            ? `<br><small style="color:#1a73e8;font-size:.75rem;">📐 ${parseFloat(d.alto).toFixed(2)}m × ${parseFloat(d.ancho).toFixed(2)}m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
+            : '';
+        tbody2.innerHTML += `<tr style="border-bottom:1px solid #f0f0f0;">
+            <td style="padding:.55rem .75rem;">${d.producto}${medidasNote}</td>
+            <td style="padding:.55rem .75rem;text-align:center;">${parseFloat(d.cantidad).toFixed(2)}</td>
+            <td style="padding:.55rem .75rem;text-align:right;">$${parseFloat(d.costo_unitario).toFixed(2)}</td>
+            <td style="padding:.55rem .75rem;text-align:right;color:#ea4335;">$${parseFloat(d.descuento_mxn).toFixed(2)}</td>
+            <td style="padding:.55rem .75rem;text-align:right;font-weight:600;">$${parseFloat(d.total_linea).toFixed(2)}</td>
+        </tr>`;
+    });
+
+    // Totals
+    document.getElementById('csm-subtotal').textContent  = `$${payload.subtotal.toFixed(2)}`;
+    document.getElementById('csm-descuento').textContent = `$${payload.descuento_total.toFixed(2)}`;
+    document.getElementById('csm-iva').textContent       = `$${payload.iva.toFixed(2)}`;
+    document.getElementById('csm-total').textContent     = `$${payload.total.toFixed(2)}`;
+
+    // Reset payment method
+    document.querySelectorAll('input[name="metodo_pago"]').forEach(r => r.checked = false);
+    document.getElementById('csm-pago-error').style.display = 'none';
+
+    document.getElementById('confirm-sale-overlay').style.display = 'flex';
+}
+
+function closeConfirmSaleModal() {
+    document.getElementById('confirm-sale-overlay').style.display = 'none';
+    _pendingPayload = null;
+}
+
+function printSaleTicket() {
+    window.print();
+}
+
+function processSale() {
+    const metodoPago = document.querySelector('input[name="metodo_pago"]:checked')?.value;
+    if (!metodoPago) {
+        document.getElementById('csm-pago-error').style.display = 'block';
+        return;
+    }
+    document.getElementById('csm-pago-error').style.display = 'none';
+
+    const btn = document.getElementById('csm-ok-btn');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+
+    const payload = { ..._pendingPayload, metodo_pago: metodoPago };
+
+    fetch('api/save_sale.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     })
-    .then(res => res.json())
+    .then(r => r.json())
     .then(data => {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Venta';
         if (data.success) {
-            alert(successMessage);
+            closeConfirmSaleModal();
             window.location.reload();
         } else {
-            alert('Error: ' + data.message);
+            alert('Error al guardar la venta: ' + data.message);
         }
     })
     .catch(err => {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Venta';
         console.error(err);
         alert('Error de conexión.');
     });
 }
+
