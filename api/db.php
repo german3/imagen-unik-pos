@@ -3,12 +3,17 @@
 // Reads from environment variables (Render) or falls back to local XAMPP defaults
 
 $host    = trim(getenv('DB_HOST') ?: '127.0.0.1');
+$port    = trim(getenv('DB_PORT') ?: '3306');
 $db      = trim(getenv('DB_NAME') ?: 'imagen_unik_pos');
 $user    = trim(getenv('DB_USER') ?: 'root');
 $pass    = trim(getenv('DB_PASS') ?: '');
 $charset = 'utf8mb4';
 
-$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+if (strpos($host, ':') !== false) {
+    list($host, $port) = explode(':', $host, 2);
+}
+
+$dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
 $options = [
     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
