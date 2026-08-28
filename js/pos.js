@@ -421,19 +421,87 @@ function attachRowEvents(tr) {
     });
 
     deleteBtn.addEventListener('click', () => {
-        if (tbody.children.length > 1) {
-            tr.remove();
-            calculateTotals();
-        } else {
-            // Clear the single remaining row
-            tr.querySelectorAll('input').forEach(inp => {
-                if (inp.type === 'number') inp.value = inp.classList.contains('qty') ? '1' : '0.00';
-                else inp.value = '';
-            });
-            setMetrosMode(tr, false);
-            calculateTotals();
-        }
+        requestDeleteAuthorization(tr);
     });
+}
+
+// ── Delete Authorization Modal Logic ──────────────────────────────────────────
+let pendingRowToDelete = null;
+
+function requestDeleteAuthorization(tr) {
+    const prodVal = tr.querySelector('.product-search') ? tr.querySelector('.product-search').value.trim() : '';
+
+    // If row has no product entered, delete directly without password
+    if (prodVal === '') {
+        performRowDelete(tr);
+        return;
+    }
+
+    pendingRowToDelete = tr;
+    const overlay = document.getElementById('auth-modal-overlay');
+    const pwdInput = document.getElementById('auth-delete-password');
+    const errText = document.getElementById('auth-delete-error');
+
+    if (overlay && pwdInput) {
+        pwdInput.value = '';
+        pwdInput.style.borderColor = 'var(--border)';
+        if (errText) errText.style.display = 'none';
+        overlay.style.display = 'flex';
+        setTimeout(() => pwdInput.focus(), 50);
+    } else {
+        // Fallback prompt
+        const pwd = prompt('🔒 Ingrese la contraseña de autorización para eliminar este producto:');
+        if (pwd !== null && pwd.trim().toLowerCase() === 'licenciado') {
+            performRowDelete(tr);
+        } else if (pwd !== null) {
+            alert('❌ Contraseña incorrecta. No tiene autorización para eliminar este registro.');
+        }
+    }
+}
+
+function closeAuthDeleteModal() {
+    pendingRowToDelete = null;
+    const overlay = document.getElementById('auth-modal-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function confirmAuthDelete() {
+    if (!pendingRowToDelete) return;
+
+    const pwdInput = document.getElementById('auth-delete-password');
+    const errText = document.getElementById('auth-delete-error');
+    const val = pwdInput ? pwdInput.value.trim().toLowerCase() : '';
+
+    if (val === 'licenciado') {
+        const rowToDel = pendingRowToDelete;
+        closeAuthDeleteModal();
+        performRowDelete(rowToDel);
+    } else {
+        if (pwdInput) {
+            pwdInput.style.borderColor = '#ea4335';
+            pwdInput.focus();
+            pwdInput.select();
+        }
+        if (errText) errText.style.display = 'block';
+    }
+}
+
+function performRowDelete(tr) {
+    const tbody = document.getElementById('pos-tbody');
+    if (!tr || !tbody) return;
+
+    if (tbody.children.length > 1) {
+        tr.remove();
+        calculateTotals();
+    } else {
+        // Clear the single remaining row
+        tr.querySelectorAll('input').forEach(inp => {
+            if (inp.type === 'number') inp.value = inp.classList.contains('qty') ? '1' : '0.00';
+            else inp.value = '';
+        });
+        setMetrosMode(tr, false);
+        calculateTotals();
+    }
 }
 
 // ── Select a product from the autocomplete dropdown ──────────────────────────

@@ -261,6 +261,13 @@
                     <p id="csm-pago-error" style="display:none;color:#ea4335;font-size:.82rem;margin:.4rem 0 0;">⚠ Selecciona un método de pago.</p>
                 </div>
 
+                <!-- Ticket footer (shown on print only) -->
+                <div class="print-ticket-footer" style="display:none;">
+                    ¡Gracias por su preferencia!<br>
+                    IMAGEN UNIK — Imprenta y Publicidad<br>
+                    Reynosa, Tamaulipas
+                </div>
+
             </div>
 
             <!-- Footer -->
@@ -282,11 +289,137 @@
             background: #e6f4ea;
         }
         @media print {
-            body * { visibility: hidden !important; }
-            #confirm-sale-printable, #confirm-sale-printable * { visibility: visible !important; }
-            #confirm-sale-printable { position: fixed; inset: 0; background: white; padding: 2rem; }
-            #csm-pago-section { display: none !important; }
-            .print-only-header { display: block !important; }
+            @page {
+                size: 80mm auto;
+                margin: 0;
+            }
+            body {
+                background: white !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #confirm-sale-printable, #confirm-sale-printable * {
+                visibility: visible !important;
+            }
+            #confirm-sale-printable {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+                padding: 4mm 5mm !important;
+                box-sizing: border-box !important;
+                background: white !important;
+                font-family: 'Courier New', Courier, monospace, sans-serif !important;
+                font-size: 11px !important;
+                color: black !important;
+                line-height: 1.3 !important;
+                overflow: visible !important;
+            }
+
+            .print-only-header {
+                display: block !important;
+                text-align: center !important;
+                margin-bottom: 8px !important;
+                padding-bottom: 6px !important;
+                border-bottom: 1px dashed #000 !important;
+            }
+            .print-only-header img {
+                max-height: 45px !important;
+                margin-bottom: 4px !important;
+                filter: grayscale(100%) !important;
+            }
+            .print-only-header h2 {
+                font-size: 14px !important;
+                font-weight: 800 !important;
+                margin: 0 !important;
+            }
+            .print-only-header p {
+                font-size: 10px !important;
+                margin: 2px 0 0 !important;
+            }
+
+            /* Info grid layout converted to narrow ticket style */
+            #confirm-sale-printable > div:nth-of-type(2) {
+                display: block !important;
+                margin-bottom: 8px !important;
+                padding-bottom: 6px !important;
+                border-bottom: 1px dashed #000 !important;
+            }
+            #confirm-sale-printable > div:nth-of-type(2) > div {
+                background: transparent !important;
+                padding: 2px 0 !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                font-size: 11px !important;
+                border-radius: 0 !important;
+                min-width: 0 !important;
+            }
+
+            /* Items table */
+            #confirm-sale-printable table {
+                width: 100% !important;
+                font-size: 10px !important;
+                border-collapse: collapse !important;
+                margin-bottom: 8px !important;
+            }
+            #confirm-sale-printable table thead tr {
+                background: transparent !important;
+            }
+            #confirm-sale-printable table th {
+                font-size: 9px !important;
+                padding: 3px 2px !important;
+                color: black !important;
+                border-bottom: 1px solid #000 !important;
+            }
+            #confirm-sale-printable table td {
+                padding: 3px 2px !important;
+                font-size: 10px !important;
+                color: black !important;
+                border-bottom: 1px dotted #ccc !important;
+            }
+            #confirm-sale-printable table small {
+                color: #333 !important;
+                font-size: 9px !important;
+                display: block !important;
+            }
+
+            /* Totals section */
+            #confirm-sale-printable > div:nth-of-type(4) {
+                width: 100% !important;
+                margin-left: 0 !important;
+                padding-top: 6px !important;
+                border-top: 1px dashed #000 !important;
+            }
+            #confirm-sale-printable > div:nth-of-type(4) > div {
+                font-size: 11px !important;
+                padding: 2px 0 !important;
+            }
+            #confirm-sale-printable > div:nth-of-type(4) > div span {
+                color: black !important;
+            }
+            #confirm-sale-printable > div:nth-of-type(4) > div:last-child {
+                border-top: 1px solid #000 !important;
+                font-size: 13px !important;
+                font-weight: bold !important;
+                padding-top: 4px !important;
+                margin-top: 4px !important;
+            }
+
+            #csm-pago-section {
+                display: none !important;
+            }
+            .print-ticket-footer {
+                display: block !important;
+                text-align: center !important;
+                margin-top: 10px !important;
+                padding-top: 6px !important;
+                border-top: 1px dashed #000 !important;
+                font-size: 9px !important;
+            }
         }
         @keyframes fadeInModal {
             from { opacity:0; transform:translateY(-12px) scale(.97); }
@@ -389,13 +522,46 @@
 
         // Close modal on Escape
         document.addEventListener('keydown', e => {
+            const authOverlay = document.getElementById('auth-modal-overlay');
+            if (authOverlay && authOverlay.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeAuthDeleteModal();
+                } else if (e.key === 'Enter') {
+                    confirmAuthDelete();
+                }
+                return;
+            }
             if (e.key === 'Escape') closeCancelModal();
         });
         // Close on overlay click
         document.getElementById('cancel-modal-overlay').addEventListener('click', function(e) {
             if (e.target === this) closeCancelModal();
         });
+        document.getElementById('auth-modal-overlay').addEventListener('click', function(e) {
+            if (e.target === this) closeAuthDeleteModal();
+        });
     </script>
+
+    <!-- ══ MODAL DE AUTORIZACIÓN PARA ELIMINAR ══════════════════════════════ -->
+    <div class="modal-overlay" id="auth-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:16px; width:90%; max-width:400px; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.25); animation:fadeInModal 0.2s ease;">
+            <div style="text-align:center; margin-bottom:1rem;">
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">🔒</div>
+                <h3 style="margin:0; font-size:1.15rem; color:var(--text-main); font-weight:700;">Autorización Requerida</h3>
+                <p style="margin:0.3rem 0 0; font-size:0.85rem; color:var(--text-muted);">Ingresa la contraseña para quitar este registro de la venta.</p>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <input type="password" id="auth-delete-password" placeholder="Contraseña de autorización" style="width:100%; padding:0.7rem 1rem; border:2px solid var(--border); border-radius:10px; font-size:1rem; text-align:center; outline:none; transition:border-color 0.2s;">
+                <p id="auth-delete-error" style="display:none; color:#ea4335; font-size:0.82rem; margin:0.4rem 0 0; text-align:center; font-weight:600;">⚠ Contraseña incorrecta.</p>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeAuthDeleteModal()" style="flex:1; padding:0.6rem;">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btn-confirm-delete-auth" onclick="confirmAuthDelete()" style="flex:1; padding:0.6rem; background:#ea4335; border-color:#ea4335; color:white; font-weight:700;">Eliminar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/pos.js"></script>
 </body>

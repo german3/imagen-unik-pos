@@ -277,6 +277,9 @@
                     <button class="btn btn-primary no-print" id="btn-cargar" style="align-self:flex-end; padding:0.5rem 1.2rem;">
                         Cargar ventas
                     </button>
+                    <button class="btn no-print" id="btn-historial-cortes" onclick="abrirModalHistorialCortes()" style="align-self:flex-end; padding:0.5rem 1.2rem; background:#6c757d; color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:0.4rem; transition:background 0.2s;">
+                        📋 Cortes de Caja
+                    </button>
                 </div>
 
                 <!-- KPI strip -->
@@ -338,9 +341,14 @@
                 <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
                     Efectivo con que se abrió la caja al inicio del turno.
                 </p>
-                <div class="money-input-wrap">
-                    <span class="currency-prefix">$</span>
-                    <input type="number" id="fondo-inicial" value="0" min="0" step="0.01" placeholder="0.00">
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <div class="money-input-wrap" style="flex:1;">
+                        <span class="currency-prefix">$</span>
+                        <input type="number" id="fondo-inicial" value="0" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="recalcResumen(true)" title="Actualizar datos de caja" style="white-space:nowrap; padding:0.65rem 0.85rem; font-size:0.85rem; font-weight:600; display:flex; align-items:center; gap:0.35rem; border-radius:10px;">
+                        🔄 Actualizar
+                    </button>
                 </div>
             </div>
 
@@ -350,9 +358,14 @@
                 <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.75rem;">
                     Total de efectivo físico real en caja al momento del corte.
                 </p>
-                <div class="money-input-wrap">
-                    <span class="currency-prefix">$</span>
-                    <input type="number" id="efectivo-contado" value="0" min="0" step="0.01" placeholder="0.00">
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <div class="money-input-wrap" style="flex:1;">
+                        <span class="currency-prefix">$</span>
+                        <input type="number" id="efectivo-contado" value="0" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="recalcResumen(true)" title="Actualizar datos de caja" style="white-space:nowrap; padding:0.65rem 0.85rem; font-size:0.85rem; font-weight:600; display:flex; align-items:center; gap:0.35rem; border-radius:10px;">
+                        🔄 Actualizar
+                    </button>
                 </div>
             </div>
 
@@ -370,7 +383,12 @@
 
             <!-- 4 · RESUMEN DE CIERRE ─────────────────────────────────── -->
             <div class="corte-card">
-                <h2>📊 Resumen de cierre</h2>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                    <h2 style="margin-bottom:0;">📊 Resumen de cierre</h2>
+                    <button type="button" class="btn btn-primary" onclick="recalcResumen(true)" style="font-size:0.8rem; padding:0.4rem 0.8rem; display:flex; align-items:center; gap:0.35rem; border-radius:8px;">
+                        🔄 Actualizar Resumen
+                    </button>
+                </div>
                 <table class="resumen-table">
                     <tr>
                         <td class="label">Fondo inicial</td>
@@ -404,6 +422,10 @@
                     <div class="dif-value" id="dif-value">$0.00</div>
                     <div class="dif-status" id="dif-status">Ingresa los datos para calcular</div>
                 </div>
+                
+                <button type="button" class="btn btn-secondary" onclick="recalcResumen(true)" style="width:100%; margin-top:0.75rem; font-size:0.85rem; padding:0.5rem; display:flex; align-items:center; justify-content:center; gap:0.4rem;">
+                    ⚡ Recalcular y Actualizar Datos
+                </button>
             </div>
 
             <!-- 6 · NOTAS + ACCIONES ─────────────────────────────────── -->
@@ -454,6 +476,42 @@
         </div>
     </div>
 
+    <!-- ══ MODAL HISTORIAL CORTES ══════════════════════════════════════════ -->
+    <div class="overlay" id="modal-historial-cortes" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:1.5rem; border-radius:14px; width:95%; max-width:900px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:0.75rem; margin-bottom:1rem;">
+                <h3 style="margin:0; color:var(--text-main); font-size:1.15rem; display:flex; align-items:center; gap:0.5rem;">
+                    📋 Historial de Cortes de Caja Realizados
+                </h3>
+                <button onclick="cerrarModalHistorialCortes()" style="background:none; border:none; font-size:1.5rem; color:var(--text-muted); cursor:pointer;">&times;</button>
+            </div>
+
+            <div style="flex:1; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+                <table style="width:100%; border-collapse:collapse; font-size:0.85rem;" class="ventas-table">
+                    <thead>
+                        <tr style="background:#f8f9fa; text-align:left;">
+                            <th style="padding:0.6rem 0.8rem;">Corte #</th>
+                            <th style="padding:0.6rem 0.8rem;">Fecha / Hora</th>
+                            <th style="padding:0.6rem 0.8rem;">Período</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Ventas</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Esperado</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:right;">Contado</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Diferencia</th>
+                            <th style="padding:0.6rem 0.8rem; text-align:center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historial-cortes-tbody">
+                        <tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-muted);">Cargando historial...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:1rem;">
+                <button class="btn btn-secondary" onclick="cerrarModalHistorialCortes()" style="padding:0.5rem 1.2rem;">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ PRINT AREA ══════════════════════════════════════════════════════ -->
     <div id="print-area">
         <div class="print-ticket" id="ticket-content"></div>
@@ -464,6 +522,110 @@
     const fmt = n => '$' + parseFloat(n || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
 
     let ventasData   = { totales:{num_ventas:0,subtotal_ventas:0,descuentos_ventas:0,iva_ventas:0,total_ventas:0}, ventas:[], movimientos:[] };
+    let historialCortesData = [];
+
+    // ── Historial Cortes Modal ────────────────────────────────────────────
+    function abrirModalHistorialCortes() {
+        document.getElementById('modal-historial-cortes').style.display = 'flex';
+        cargarHistorialCortes();
+    }
+
+    function cerrarModalHistorialCortes() {
+        document.getElementById('modal-historial-cortes').style.display = 'none';
+    }
+
+    async function cargarHistorialCortes() {
+        const tbody = document.getElementById('historial-cortes-tbody');
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-muted);">Cargando historial...</td></tr>';
+        
+        try {
+            const res = await fetch('api/get_cortes_historial.php');
+            const data = await res.json();
+
+            if (!data.success) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--danger);">Error: ${data.message}</td></tr>`;
+                return;
+            }
+
+            historialCortesData = data.cortes;
+
+            if (!data.cortes || data.cortes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--text-muted);">No hay cortes de caja registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            data.cortes.forEach(c => {
+                const tr = document.createElement('tr');
+                let fechaStr = c.creado_en || '';
+                if (c.creado_en) {
+                    const dt = new Date(c.creado_en.replace(' ', 'T'));
+                    if (!isNaN(dt.getTime())) {
+                        fechaStr = dt.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + dt.toLocaleTimeString('es-MX', {hour:'2-digit',minute:'2-digit'});
+                    }
+                }
+                
+                const fInicio = c.fecha_inicio ? c.fecha_inicio.substring(0, 10) : '';
+                const fFin = c.fecha_fin ? c.fecha_fin.substring(0, 10) : '';
+                const periodoStr = `${fInicio} al ${fFin}`;
+
+                const dif = parseFloat(c.diferencia) || 0;
+                let badgeBg = '#eee', badgeColor = '#666', difLabel = '✓ $0.00';
+                if (dif > 0.005) {
+                    badgeBg = '#e6f4ea'; badgeColor = '#137333'; difLabel = '▲ +' + fmt(dif);
+                } else if (dif < -0.005) {
+                    badgeBg = '#fce8e6'; badgeColor = '#c0392b'; difLabel = '▼ -' + fmt(Math.abs(dif));
+                } else {
+                    badgeBg = '#e8eaed'; badgeColor = '#3c4043'; difLabel = '✓ $0.00';
+                }
+
+                tr.innerHTML = `
+                    <td style="padding:0.6rem 0.8rem; font-weight:700;">#${c.id}</td>
+                    <td style="padding:0.6rem 0.8rem;">${fechaStr}</td>
+                    <td style="padding:0.6rem 0.8rem; font-size:0.8rem; color:var(--text-muted);">${periodoStr}</td>
+                    <td style="padding:0.6rem 0.8rem; text-align:right;">${fmt(c.total_ventas)}</td>
+                    <td style="padding:0.6rem 0.8rem; text-align:right;">${fmt(c.efectivo_esperado)}</td>
+                    <td style="padding:0.6rem 0.8rem; text-align:right; font-weight:600;">${fmt(c.efectivo_contado)}</td>
+                    <td style="padding:0.6rem 0.8rem; text-align:center;">
+                        <span style="background:${badgeBg}; color:${badgeColor}; padding:0.2rem 0.5rem; border-radius:12px; font-weight:700; font-size:0.78rem;">
+                            ${difLabel}
+                        </span>
+                    </td>
+                    <td style="padding:0.6rem 0.8rem; text-align:center;">
+                        <button onclick="reimprimirCorte(${c.id})" class="btn btn-secondary" style="padding:0.25rem 0.6rem; font-size:0.78rem;" title="Imprimir Ticket">
+                            🖨 Ticket
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:1.5rem; color:var(--danger);">Error de conexión al cargar el historial.</td></tr>';
+        }
+    }
+
+    function reimprimirCorte(corteId) {
+        const corte = historialCortesData.find(c => parseInt(c.id) === parseInt(corteId));
+        if (!corte) return;
+
+        buildTicket({
+            fecha_inicio: corte.fecha_inicio ? corte.fecha_inicio.substring(0, 10) : '',
+            fecha_fin: corte.fecha_fin ? corte.fecha_fin.substring(0, 10) : '',
+            fondo_inicial: corte.fondo_inicial,
+            num_ventas: corte.num_ventas,
+            subtotal_ventas: corte.subtotal_ventas,
+            descuentos_ventas: corte.descuentos_ventas,
+            iva_ventas: corte.iva_ventas,
+            total_ventas: corte.total_ventas,
+            total_ingresos: corte.total_ingresos,
+            total_gastos: corte.total_gastos,
+            efectivo_esperado: corte.efectivo_esperado,
+            efectivo_contado: corte.efectivo_contado,
+            diferencia: corte.diferencia,
+            notas: corte.notas
+        });
+        imprimirCorte();
+    }
     
     // ── Movimientos de Caja Modal ─────────────────────────────────────────
     function abrirModalMovimiento() {
@@ -572,7 +734,7 @@
     }
 
     // ── Resumen en tiempo real ────────────────────────────────────────────
-    function recalcResumen() {
+    function recalcResumen(showFeedback = false) {
         const fondo     = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const totalVent = parseFloat(ventasData.totales.total_ventas) || 0;
         const movs      = getMovimientosTotales();
@@ -607,6 +769,16 @@
             difBox.className += 'neutro';
             difLabel.textContent  = '✓ Cuadrado';
             difStatus.textContent = 'La caja cuadra perfectamente';
+        }
+
+        if (showFeedback) {
+            difBox.style.transition = 'transform 0.15s ease, box-shadow 0.15s ease';
+            difBox.style.transform = 'scale(1.04)';
+            difBox.style.boxShadow = '0 0 15px rgba(26,115,232,0.4)';
+            setTimeout(() => {
+                difBox.style.transform = 'scale(1)';
+                difBox.style.boxShadow = 'none';
+            }, 300);
         }
     }
 
@@ -800,9 +972,14 @@
         document.getElementById('fecha-fin').value    = today;
 
         document.getElementById('btn-cargar').addEventListener('click', cargarVentas);
-        document.getElementById('btn-cerrar-corte').addEventListener('click', cerrarCorte);
-        document.getElementById('fondo-inicial').addEventListener('input', recalcResumen);
-        document.getElementById('efectivo-contado').addEventListener('input', recalcResumen);
+        document.getElementById('fondo-inicial').addEventListener('input', () => recalcResumen());
+        document.getElementById('efectivo-contado').addEventListener('input', () => recalcResumen());
+
+        ['fondo-inicial', 'efectivo-contado'].forEach(id => {
+            document.getElementById(id).addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') recalcResumen(true);
+            });
+        });
 
         cargarVentas();
     });
