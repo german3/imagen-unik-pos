@@ -1,8 +1,4 @@
--- NOTA PARA BASES DE DATOS EN LA NUBE (ej. FreeSQLDatabase, db4free, etc.):
--- En plataformas gratuitas de MySQL, la base de datos ya viene creada.
--- Si usas una de ellas, NO ejecutes las siguientes dos líneas (o coméntalas):
--- CREATE DATABASE IF NOT EXISTS imagen_unik_pos DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
--- USE imagen_unik_pos;
+-- Script completo para la base de datos de Imagen Unik POS
 
 CREATE TABLE IF NOT EXISTS productos (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,6 +45,10 @@ CREATE TABLE IF NOT EXISTS ventas (
     descuento_total DECIMAL(10,2) DEFAULT 0,
     iva DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
+    estatus VARCHAR(20) NOT NULL DEFAULT 'confirmada',
+    motivo_cancelacion TEXT NULL,
+    metodo_pago VARCHAR(50) NULL DEFAULT 'efectivo',
+    folio INT NULL UNIQUE,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );
 
@@ -96,11 +96,38 @@ CREATE TABLE IF NOT EXISTS cotizaciones_detalle (
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 );
 
--- Tabla de folio global compartido (ventas confirmadas, canceladas y cotizaciones)
+CREATE TABLE IF NOT EXISTS cortes_caja (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha_inicio DATETIME NOT NULL,
+    fecha_fin DATETIME NOT NULL,
+    fondo_inicial DECIMAL(10,2) DEFAULT 0,
+    num_ventas INT DEFAULT 0,
+    subtotal_ventas DECIMAL(10,2) DEFAULT 0,
+    descuentos_ventas DECIMAL(10,2) DEFAULT 0,
+    iva_ventas DECIMAL(10,2) DEFAULT 0,
+    total_ventas DECIMAL(10,2) DEFAULT 0,
+    total_ingresos DECIMAL(10,2) DEFAULT 0,
+    total_gastos DECIMAL(10,2) DEFAULT 0,
+    efectivo_esperado DECIMAL(10,2) DEFAULT 0,
+    efectivo_contado DECIMAL(10,2) DEFAULT 0,
+    diferencia DECIMAL(10,2) DEFAULT 0,
+    notas TEXT,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS gastos_caja (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    corte_id INT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    tipo VARCHAR(20) DEFAULT 'retiro',
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (corte_id) REFERENCES cortes_caja(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS folio_global (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tipo VARCHAR(20) NOT NULL COMMENT 'venta | cotizacion',
     referencia_id INT NOT NULL COMMENT 'id real en su tabla de origen',
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
 );
-
