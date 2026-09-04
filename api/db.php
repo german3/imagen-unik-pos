@@ -19,8 +19,19 @@ $options = [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES   => false,
 ];
-if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
-    $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+
+// Si no es local, activar SSL/TLS requerido por proveedores como TiDB Cloud
+if ($host !== '127.0.0.1' && $host !== 'localhost') {
+    if (file_exists('/etc/ssl/certs/ca-certificates.crt')) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/ssl/certs/ca-certificates.crt';
+    } elseif (file_exists('/etc/pki/tls/certs/ca-bundle.crt')) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = '/etc/pki/tls/certs/ca-bundle.crt';
+    } elseif (defined('PDO::MYSQL_ATTR_SSL_CA')) {
+        $options[PDO::MYSQL_ATTR_SSL_CA] = true;
+    }
+    if (defined('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT')) {
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+    }
 }
 
 try {

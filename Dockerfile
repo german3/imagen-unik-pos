@@ -1,8 +1,9 @@
 # PHP 8.2 + Apache
 FROM php:8.2-apache
 
-# Enable mod_rewrite
-RUN a2enmod rewrite
+# Install ca-certificates and enable rewrite
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/* \
+    && a2enmod rewrite
 
 # Install PDO MySQL extension
 RUN docker-php-ext-install pdo pdo_mysql
