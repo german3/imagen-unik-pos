@@ -579,14 +579,17 @@
             }
             if (e.key === 'Escape') closeCancelModal();
         });
-        // Close on overlay click
-        document.getElementById('cancel-modal-overlay').addEventListener('click', function(e) {
+        // Close on overlay click (null guards: some modals are defined later in the DOM)
+        const _cancelOvl = document.getElementById('cancel-modal-overlay');
+        if (_cancelOvl) _cancelOvl.addEventListener('click', function(e) {
             if (e.target === this) closeCancelModal();
         });
-        document.getElementById('auth-modal-overlay').addEventListener('click', function(e) {
+        const _authOvl = document.getElementById('auth-modal-overlay');
+        if (_authOvl) _authOvl.addEventListener('click', function(e) {
             if (e.target === this) closeAuthDeleteModal();
         });
-        document.getElementById('quote-obs-modal-overlay').addEventListener('click', function(e) {
+        const _quoteObsOvl = document.getElementById('quote-obs-modal-overlay');
+        if (_quoteObsOvl) _quoteObsOvl.addEventListener('click', function(e) {
             if (e.target === this) closeQuoteObsModal();
         });
     </script>

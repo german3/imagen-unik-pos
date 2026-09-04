@@ -15,7 +15,7 @@ try {
     $stmt = $pdo->prepare(
         "SELECT id, sku, descripcion, precio, costo, venta_por_metros, costo_m2, precio_m2
          FROM productos
-         WHERE descripcion LIKE ? OR sku LIKE ?
+         WHERE LOWER(descripcion) LIKE LOWER(?) OR LOWER(sku) LIKE LOWER(?)
          LIMIT 10"
     );
     $searchTerm = "%" . $query . "%";

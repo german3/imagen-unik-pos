@@ -3,7 +3,6 @@
 *.docx
 ~$*
 *.tmp
-.env
 WhatsApp*
 cotizacion*.png
 branch_structure.json
@@ -13,3 +12,5 @@ uploads/*
 !uploads/.gitkeep
 .gitignore
 
+config.bat
+node_modules
