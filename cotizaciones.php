@@ -27,17 +27,83 @@
         #printable-area { padding: 2rem; background: white; color: black; }
         .print-header { text-align: center; margin-bottom: 2rem; }
         .print-header h1 { color: #333; margin-bottom: 0.5rem; }
-        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 2rem; }
+        .print-table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
         .print-table th, .print-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .print-table th { background-color: #f2f2f2; }
-        .print-totals { width: 300px; margin-left: auto; }
+        
+        .print-middle-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .print-obs-container {
+            flex: 1;
+            max-width: 58%;
+        }
+        .print-obs-title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.4rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .print-obs-box {
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.92rem;
+            color: #1e293b;
+            min-height: 80px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.45;
+        }
+        
+        .print-totals { width: 280px; flex-shrink: 0; }
         .print-totals-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
         .print-totals-row.bold { font-weight: bold; font-size: 1.1em; border-top: 2px solid #333; padding-top: 0.5rem; }
         
+        /* Estilos para el pie de página / datos bancarios */
+        .print-footer-info {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 2px dashed #ccc;
+            font-size: 0.88rem;
+            color: #333;
+        }
+        .payment-methods-grid {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+        }
+        .payment-box {
+            flex: 1;
+            background: #f9f9f9;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+        }
+        .payment-box h4 {
+            margin: 0 0 0.4rem 0;
+            color: #1a73e8;
+            font-size: 0.95rem;
+        }
+        .payment-box p {
+            margin: 0.2rem 0;
+            line-height: 1.3;
+        }
+
         @media print {
             body * { visibility: hidden; }
             #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+            #printable-area { position: absolute; left: 0; top: 0; width: 100%; max-height: none !important; overflow: visible !important; }
+            .print-middle-section { display: flex !important; justify-content: space-between !important; }
+            .print-obs-container { flex: 1 !important; max-width: 58% !important; }
+            .print-totals { width: 280px !important; }
         }
     </style>
 </head>
@@ -120,36 +186,67 @@
                     </tbody>
                 </table>
                 
-                <div class="print-totals">
-                    <div class="print-totals-row">
-                        <span>Subtotal:</span>
-                        <span id="print-subtotal"></span>
+                <!-- SECCIÓN CENTRAL: OBSERVACIONES (IZQ) Y TOTALES (DER) -->
+                <div class="print-middle-section">
+                    <div class="print-obs-container">
+                        <div class="print-obs-title">Observaciones</div>
+                        <div class="print-obs-box" id="print-observaciones">
+                            Sin observaciones adicionales
+                        </div>
                     </div>
-                    <div class="print-totals-row">
-                        <span>Descuento:</span>
-                        <span id="print-discount"></span>
+
+                    <div class="print-totals">
+                        <div class="print-totals-row">
+                            <span>Subtotal:</span>
+                            <span id="print-subtotal"></span>
+                        </div>
+                        <div class="print-totals-row">
+                            <span>Descuento:</span>
+                            <span id="print-discount"></span>
+                        </div>
+                        <div class="print-totals-row">
+                            <span>IVA (16%):</span>
+                            <span id="print-iva"></span>
+                        </div>
+                        <div class="print-totals-row bold">
+                            <span>Total:</span>
+                            <span id="print-total"></span>
+                        </div>
                     </div>
-                    <div class="print-totals-row">
-                        <span>IVA (16%):</span>
-                        <span id="print-iva"></span>
-                    </div>
-                    <div class="print-totals-row bold">
-                        <span>Total:</span>
-                        <span id="print-total"></span>
+                </div>
+
+                <!-- SECCIÓN DE DATOS BANCARIOS Y CONTACTO -->
+                <div class="print-footer-info">
+                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #333;">💳 Datos de Pago</h3>
+                    <div class="payment-methods-grid">
+                        <div class="payment-box">
+                            <h4>MERCADO PAGO</h4>
+                            <p><strong>CLABE:</strong> 722969015438018560</p>
+                            <p><strong>Beneficiario:</strong> Benjamin Alvarez</p>
+                            <p><strong>Cuenta:</strong> Mercado Pago W</p>
+                        </div>
+                        <div class="payment-box">
+                            <h4>BANCO BANREGIO</h4>
+                            <p><strong>Titular:</strong> Benjamin Alvarez Castañeda</p>
+                            <p><strong>CLABE:</strong> 058822000149024960</p>
+                            <p><strong>No. Cuenta:</strong> 850872570016</p>
+                            <p><strong>Tarjeta:</strong> 4741 7435 5962 5612</p>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="modal-footer" style="padding: 1.5rem 2rem; border-top: 1px solid #eee; background: #f8f9fa; border-radius: 0 0 var(--radius) var(--radius); display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
-                <button id="btn-enviar-venta" class="btn" onclick="sendToPos()" style="background: linear-gradient(135deg, #34a853, #1e7e34); color: white; font-weight: 700; padding: 0.6rem 1.4rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 8px rgba(52,168,83,0.35); transition: opacity 0.2s;">&#128722; Enviar a Venta</button>
-                <button class="btn btn-primary" onclick="exportHtml2Pdf()">&#128229; Descargar PDF</button>
-                <button class="btn btn-success" onclick="printQuote()">&#128424;&#65039; Imprimir</button>
+                <button id="btn-enviar-venta" class="btn" onclick="sendToPos()" style="background: linear-gradient(135deg, #34a853, #1e7e34); color: white; font-weight: 700; padding: 0.6rem 1.4rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.95rem; display: flex; align-items: center; gap: 0.4rem; box-shadow: 0 2px 8px rgba(52,168,83,0.35); transition: opacity 0.2s;">🛒 Enviar a Venta</button>
+                <button class="btn btn-primary" onclick="exportHtml2Pdf()">📥 Descargar PDF</button>
+                <button class="btn btn-success" onclick="printQuote()">🖨️ Imprimir</button>
             </div>
         </div>
     </div>
 
     <!-- html2pdf library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="js/notifications.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Set default dates to current month
@@ -203,12 +300,13 @@
                         document.getElementById('print-id').textContent = 'F-' + String(m.folio || m.id).padStart(4,'0');
                         document.getElementById('print-date').textContent = m.fecha_hora;
                         document.getElementById('print-client').textContent = m.cliente_nombre;
+                        document.getElementById('print-observaciones').textContent = m.observaciones || 'Sin observaciones adicionales';
                         
                         const tbody = document.getElementById('print-items');
                         tbody.innerHTML = '';
                         data.detalles.forEach(d => {
                             const medidas = (d.alto && d.ancho)
-                                ? `<br><small style="color:#1a73e8;font-size:0.78rem;">&#128208; Medidas: ${parseFloat(d.alto).toFixed(2)} m × ${parseFloat(d.ancho).toFixed(2)} m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
+                                ? `<br><small style="color:#1a73e8;font-size:0.78rem;">📐 Medidas: ${parseFloat(d.alto).toFixed(2)} m × ${parseFloat(d.ancho).toFixed(2)} m = ${parseFloat(d.cantidad).toFixed(4)} m²</small>`
                                 : '';
                             tbody.innerHTML += `
                                 <tr>
@@ -248,14 +346,27 @@
         
         function exportHtml2Pdf() {
             const element = document.getElementById('printable-area');
+            
+            // Desactivar temporalmente restricciones de scroll para capturar todo el contenido
+            const originalMaxHeight = element.style.maxHeight;
+            const originalOverflow = element.style.overflowY;
+            
+            element.style.maxHeight = 'none';
+            element.style.overflowY = 'visible';
+
             const opt = {
               margin:       10,
               filename:     'Cotizacion_' + document.getElementById('print-id').textContent + '.pdf',
               image:        { type: 'jpeg', quality: 0.98 },
-              html2canvas:  { scale: 2 },
+              html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
               jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            html2pdf().set(opt).from(element).save();
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Restaurar restricciones de la vista tras generar el PDF
+                element.style.maxHeight = originalMaxHeight;
+                element.style.overflowY = originalOverflow;
+            });
         }
 
         // Handle ESC key to close modal

@@ -263,10 +263,15 @@
 
                 <!-- Ticket footer (shown on print only) -->
                 <div class="print-ticket-footer" style="display:none;">
+
                     ¡Gracias por su preferencia!<br>
+
                     IMAGEN UNIK — Imprenta y Publicidad<br>
+
                     Reynosa, Tamaulipas
-                </div>
+
+                </div> 
+
 
             </div>
 
@@ -282,151 +287,184 @@
             </div>
         </div>
     </div>
-
-    <style>
-        .pay-opt:has(input:checked) {
-            border-color: #34a853 !important;
-            background: #e6f4ea;
+<style>
+    .pay-opt:has(input:checked) {
+        border-color: #34a853 !important;
+        background: #e6f4ea;
+    }
+    
+    @media print {
+        @page {
+            size: 80mm auto;
+            margin: 0;
         }
-        @media print {
-            @page {
-                size: 80mm auto;
-                margin: 0;
-            }
-            body {
-                background: white !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            body * {
-                visibility: hidden !important;
-            }
-            #confirm-sale-printable, #confirm-sale-printable * {
-                visibility: visible !important;
-            }
-            #confirm-sale-printable {
-                position: absolute !important;
-                left: 0 !important;
-                top: 0 !important;
-                width: 80mm !important;
-                max-width: 80mm !important;
-                padding: 4mm 5mm !important;
-                box-sizing: border-box !important;
-                background: white !important;
-                font-family: 'Courier New', Courier, monospace, sans-serif !important;
-                font-size: 11px !important;
-                color: black !important;
-                line-height: 1.3 !important;
-                overflow: visible !important;
-            }
-
-            .print-only-header {
-                display: block !important;
-                text-align: center !important;
-                margin-bottom: 8px !important;
-                padding-bottom: 6px !important;
-                border-bottom: 1px dashed #000 !important;
-            }
-            .print-only-header img {
-                max-height: 45px !important;
-                margin-bottom: 4px !important;
-                filter: grayscale(100%) !important;
-            }
-            .print-only-header h2 {
-                font-size: 14px !important;
-                font-weight: 800 !important;
-                margin: 0 !important;
-            }
-            .print-only-header p {
-                font-size: 10px !important;
-                margin: 2px 0 0 !important;
-            }
-
-            /* Info grid layout converted to narrow ticket style */
-            #confirm-sale-printable > div:nth-of-type(2) {
-                display: block !important;
-                margin-bottom: 8px !important;
-                padding-bottom: 6px !important;
-                border-bottom: 1px dashed #000 !important;
-            }
-            #confirm-sale-printable > div:nth-of-type(2) > div {
-                background: transparent !important;
-                padding: 2px 0 !important;
-                display: flex !important;
-                justify-content: space-between !important;
-                font-size: 11px !important;
-                border-radius: 0 !important;
-                min-width: 0 !important;
-            }
-
-            /* Items table */
-            #confirm-sale-printable table {
-                width: 100% !important;
-                font-size: 10px !important;
-                border-collapse: collapse !important;
-                margin-bottom: 8px !important;
-            }
-            #confirm-sale-printable table thead tr {
-                background: transparent !important;
-            }
-            #confirm-sale-printable table th {
-                font-size: 9px !important;
-                padding: 3px 2px !important;
-                color: black !important;
-                border-bottom: 1px solid #000 !important;
-            }
-            #confirm-sale-printable table td {
-                padding: 3px 2px !important;
-                font-size: 10px !important;
-                color: black !important;
-                border-bottom: 1px dotted #ccc !important;
-            }
-            #confirm-sale-printable table small {
-                color: #333 !important;
-                font-size: 9px !important;
-                display: block !important;
-            }
-
-            /* Totals section */
-            #confirm-sale-printable > div:nth-of-type(4) {
-                width: 100% !important;
-                margin-left: 0 !important;
-                padding-top: 6px !important;
-                border-top: 1px dashed #000 !important;
-            }
-            #confirm-sale-printable > div:nth-of-type(4) > div {
-                font-size: 11px !important;
-                padding: 2px 0 !important;
-            }
-            #confirm-sale-printable > div:nth-of-type(4) > div span {
-                color: black !important;
-            }
-            #confirm-sale-printable > div:nth-of-type(4) > div:last-child {
-                border-top: 1px solid #000 !important;
-                font-size: 13px !important;
-                font-weight: bold !important;
-                padding-top: 4px !important;
-                margin-top: 4px !important;
-            }
-
-            #csm-pago-section {
-                display: none !important;
-            }
-            .print-ticket-footer {
-                display: block !important;
-                text-align: center !important;
-                margin-top: 10px !important;
-                padding-top: 6px !important;
-                border-top: 1px dashed #000 !important;
-                font-size: 9px !important;
-            }
+        body {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
-        @keyframes fadeInModal {
-            from { opacity:0; transform:translateY(-12px) scale(.97); }
-            to   { opacity:1; transform:translateY(0) scale(1); }
+        body * {
+            visibility: hidden !important;
         }
-    </style>
+        
+        /* Forzar fuente Arial, negrita extrema y negro absoluto */
+        #confirm-sale-printable, 
+        #confirm-sale-printable * {
+            visibility: visible !important;
+            color: #000000 !important;
+            font-family: Arial, 'Helvetica Neue', Helvetica, sans-serif !important;
+            font-weight: 900 !important;
+            opacity: 1 !important;
+            text-shadow: none !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
 
+        #confirm-sale-printable {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 80mm !important;
+            max-width: 80mm !important;
+            padding: 4mm 5mm 0mm 5mm !important;
+            box-sizing: border-box !important;
+            background: #ffffff !important;
+            font-size: 13px !important;
+            line-height: 1.35 !important;
+            overflow: visible !important;
+        }
+
+        .print-only-header {
+            display: block !important;
+            text-align: center !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 6px !important;
+            border-bottom: 2px dashed #000000 !important;
+        }
+        .print-only-header img {
+            max-height: 50px !important;
+            margin-bottom: 4px !important;
+            filter: contrast(200%) grayscale(100%) !important;
+        }
+        .print-only-header h2 {
+            font-size: 16px !important;
+            font-weight: 900 !important;
+            margin: 0 !important;
+        }
+        .print-only-header p {
+            font-size: 12px !important;
+            margin: 2px 0 0 !important;
+        }
+
+        /* Info grid layout convertida a ticket */
+        #confirm-sale-printable > div:nth-of-type(2) {
+            display: block !important;
+            margin-bottom: 10px !important;
+            padding-bottom: 6px !important;
+            border-bottom: 2px dashed #000000 !important;
+        }
+        #confirm-sale-printable > div:nth-of-type(2) > div {
+            background: transparent !important;
+            padding: 2px 0 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            font-size: 12px !important;
+            border-radius: 0 !important;
+            min-width: 0 !important;
+        }
+
+        /* Tabla de productos */
+        #confirm-sale-printable table {
+            width: 100% !important;
+            font-size: 12px !important;
+            border-collapse: collapse !important;
+            margin-bottom: 10px !important;
+        }
+        #confirm-sale-printable table thead tr {
+            background: transparent !important;
+        }
+        #confirm-sale-printable table th {
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            padding: 4px 2px !important;
+            color: #000000 !important;
+            border-bottom: 2px solid #000000 !important;
+        }
+        #confirm-sale-printable table td {
+            padding: 4px 2px !important;
+            font-size: 12px !important;
+            color: #000000 !important;
+            border-bottom: 1px dashed #000000 !important;
+        }
+        
+        /* Descripción e información secundaria de producto */
+        #confirm-sale-printable table small {
+            color: #000000 !important;
+            font-size: 11px !important;
+            display: block !important;
+            font-weight: 900 !important;
+            margin-top: 1px !important;
+            opacity: 1 !important;
+        }
+
+        /* Totales */
+        #confirm-sale-printable > div:nth-of-type(4) {
+            width: 100% !important;
+            margin-left: 0 !important;
+            padding-top: 6px !important;
+            border-top: 2px dashed #000000 !important;
+        }
+        #confirm-sale-printable > div:nth-of-type(4) > div {
+            font-size: 13px !important;
+            padding: 3px 0 !important;
+        }
+        #confirm-sale-printable > div:nth-of-type(4) > div span {
+            color: #000000 !important;
+            font-weight: 900 !important;
+        }
+        #confirm-sale-printable > div:nth-of-type(4) > div:last-child {
+            border-top: 2px solid #000000 !important;
+            font-size: 15px !important;
+            font-weight: 900 !important;
+            padding-top: 6px !important;
+            margin-top: 6px !important;
+        }
+
+        #csm-pago-section {
+            display: none !important;
+        }
+        
+        /* Fuerza la visibilidad del footer sobre el style="display:none;" en línea */
+        div.print-ticket-footer,
+        #confirm-sale-printable .print-ticket-footer {
+            display: block !important;
+            visibility: visible !important;
+            text-align: center !important;
+            margin-top: 12px !important;
+            padding-top: 8px !important;
+            border-top: 2px dashed #000000 !important;
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            color: #000000 !important;
+            margin-bottom: 0 !important;
+        }
+
+        /* Espaciador de 55mm pegado DIRECTAMENTE DEBAJO DEL FOOTER para evitar el corte */
+        div.print-ticket-footer::after,
+        #confirm-sale-printable .print-ticket-footer::after {
+            content: "" !important;
+            display: block !important;
+            height: 70mm !important; /* Avance de papel para librar la cuchilla */
+            width: 100% !important;
+            clear: both !important;
+        }
+    }
+
+    @keyframes fadeInModal {
+        from { opacity:0; transform:translateY(-12px) scale(.97); }
+        to   { opacity:1; transform:translateY(0) scale(1); }
+    }
+</style>
     <script>
         document.getElementById('btn-cancelar').addEventListener('click', openCancelModal);
 
@@ -511,13 +549,14 @@
             .then(res => {
                 if (res.success) {
                     closeCancelModal();
-                    alert('✅ Orden cancelada y registrada correctamente.');
-                    window.location.reload();
+                    showAlert('Orden cancelada y registrada correctamente.', 'success', 'Orden Cancelada').then(() => {
+                        window.location.reload();
+                    });
                 } else {
-                    alert('❌ Error: ' + res.message);
+                    showAlert(res.message || 'Error al cancelar la orden.', 'error', 'Error');
                 }
             })
-            .catch(() => alert('❌ Error de conexión.'));
+            .catch(() => showAlert('No se pudo conectar con el servidor. Verifique la conexión.', 'error', 'Error de Conexión'));
         }
 
         // Close modal on Escape
@@ -531,6 +570,13 @@
                 }
                 return;
             }
+            const quoteObsOverlay = document.getElementById('quote-obs-modal-overlay');
+            if (quoteObsOverlay && quoteObsOverlay.style.display === 'flex') {
+                if (e.key === 'Escape') {
+                    closeQuoteObsModal();
+                }
+                return;
+            }
             if (e.key === 'Escape') closeCancelModal();
         });
         // Close on overlay click
@@ -539,6 +585,9 @@
         });
         document.getElementById('auth-modal-overlay').addEventListener('click', function(e) {
             if (e.target === this) closeAuthDeleteModal();
+        });
+        document.getElementById('quote-obs-modal-overlay').addEventListener('click', function(e) {
+            if (e.target === this) closeQuoteObsModal();
         });
     </script>
 
@@ -563,6 +612,28 @@
         </div>
     </div>
 
+    <!-- ══ MODAL DE OBSERVACIONES PARA COTIZACIÓN ══════════════════════════════ -->
+    <div class="modal-overlay" id="quote-obs-modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:16px; width:90%; max-width:440px; padding:1.5rem; box-shadow:0 10px 30px rgba(0,0,0,0.25); animation:fadeInModal 0.2s ease;">
+            <div style="text-align:center; margin-bottom:1rem;">
+                <div style="font-size:2.5rem; margin-bottom:0.3rem;">📋</div>
+                <h3 style="margin:0; font-size:1.2rem; color:var(--text-main); font-weight:700;">Cuadro de observaciones</h3>
+                <p style="margin:0.3rem 0 0; font-size:0.88rem; color:var(--text-muted);">Agrega Observaciones o Notas a la cotizacion</p>
+            </div>
+
+            <div style="margin-bottom:1.25rem;">
+                <textarea id="quote-obs-text" rows="4" placeholder="Sin observaciones adicionales" style="width:100%; padding:0.75rem 1rem; border:2px solid var(--border); border-radius:10px; font-size:0.95rem; font-family:inherit; outline:none; resize:vertical; transition:border-color 0.2s;"></textarea>
+            </div>
+
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="closeQuoteObsModal()" style="flex:1; padding:0.6rem;">Cancelar</button>
+                <button type="button" class="btn btn-success" id="btn-confirm-quote-obs" onclick="confirmSaveQuoteWithObs()" style="flex:1; padding:0.6rem; background:#34a853; border-color:#34a853; color:white; font-weight:700;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Popup & Toast Notifications -->
+    <script src="js/notifications.js"></script>
     <script src="js/pos.js"></script>
 </body>
 </html>

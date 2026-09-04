@@ -15,13 +15,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare("INSERT INTO cotizaciones (cliente_id, subtotal, descuento_total, iva, total) VALUES (?, ?, ?, ?, ?)");
+        $observaciones = isset($data['observaciones']) && trim($data['observaciones']) !== ''
+            ? trim($data['observaciones'])
+            : 'Sin observaciones adicionales';
+
+        $stmt = $pdo->prepare("INSERT INTO cotizaciones (cliente_id, subtotal, descuento_total, iva, total, observaciones) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['cliente_id'],
             $data['subtotal'],
             $data['descuento_total'],
             $data['iva'],
-            $data['total']
+            $data['total'],
+            $observaciones
         ]);
         
         $cotizacionId = $pdo->lastInsertId();

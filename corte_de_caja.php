@@ -517,6 +517,9 @@
         <div class="print-ticket" id="ticket-content"></div>
     </div>
 
+    <!-- Custom Popup & Toast Notifications -->
+    <script src="js/notifications.js"></script>
+
     <script>
     // ── Helpers ───────────────────────────────────────────────────────────
     const fmt = n => '$' + parseFloat(n || 0).toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -646,7 +649,7 @@
         const desc = document.getElementById('modal-mov-desc').value.trim();
 
         if (monto <= 0 || !desc) {
-            alert('Por favor, ingresa un monto mayor a 0 y una descripción.');
+            showAlert('Por favor, ingresa un monto mayor a 0 y una descripción válida.', 'warning', 'Datos Incompletos');
             return;
         }
 
@@ -662,29 +665,32 @@
             const data = await res.json();
             if (data.success) {
                 cerrarModalMovimiento();
+                showToast('Movimiento registrado correctamente', 'success');
                 cargarVentas(); // Reload the data
             } else {
-                alert('Error: ' + data.message);
+                showAlert(data.message || 'Error al guardar movimiento', 'error', 'Error');
             }
-        } catch(e) { alert('Error de red'); }
+        } catch(e) { showAlert('Error de red al registrar movimiento.', 'error', 'Error de Red'); }
         btn.textContent = 'Guardar'; btn.disabled = false;
     }
 
     async function eliminarMovimiento(id) {
-        if (!confirm('¿Eliminar este movimiento?')) return;
-        try {
-            const res = await fetch('api/delete_movimiento.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
-            const data = await res.json();
-            if (data.success) {
-                cargarVentas();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        } catch(e) { alert('Error de red'); }
+        showConfirm('¿Eliminar Movimiento?', '¿Está seguro de que desea eliminar este movimiento de caja? Esta acción no se puede deshacer.', async () => {
+            try {
+                const res = await fetch('api/delete_movimiento.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Movimiento eliminado', 'success');
+                    cargarVentas();
+                } else {
+                    showAlert(data.message || 'Error al eliminar', 'error', 'Error');
+                }
+            } catch(e) { showAlert('Error de conexión con el servidor.', 'error', 'Error de Red'); }
+        }, null, { danger: true, confirmText: 'Sí, Eliminar' });
     }
 
     function renderMovimientos() {
@@ -786,7 +792,10 @@
     function cargarVentas() {
         const inicio = document.getElementById('fecha-inicio').value;
         const fin    = document.getElementById('fecha-fin').value;
-        if (!inicio || !fin) { alert('Selecciona las fechas.'); return; }
+        if (!inicio || !fin) { 
+            showAlert('Selecciona las fechas de inicio y fin para cargar el corte.', 'warning', 'Fechas Requeridas'); 
+            return; 
+        }
 
         const btn = document.getElementById('btn-cargar');
         btn.textContent = 'Cargando…';
@@ -797,7 +806,10 @@
             .then(data => {
                 btn.textContent = 'Cargar ventas';
                 btn.disabled = false;
-                if (!data.success) { alert('Error: ' + data.message); return; }
+                if (!data.success) { 
+                    showAlert(data.message || 'No se pudieron cargar los datos de ventas.', 'error', 'Error'); 
+                    return; 
+                }
 
                 ventasData = data;
                 const t = data.totales;
@@ -853,16 +865,12 @@
                 btn.textContent = 'Cargar ventas';
                 btn.disabled = false;
                 console.error(err);
-                alert('Error de conexión.');
+                showAlert('No se pudo conectar con el servidor. Verifique la conexión.', 'error', 'Error de Conexión');
             });
     }
 
     // ── Cerrar corte ──────────────────────────────────────────────────────
-    document.getElementById('btn-cerrar-corte').addEventListener('click', () => {
-        if (!ventasData.ventas.length && (!ventasData.movimientos || !ventasData.movimientos.length)) {
-            if (!confirm('No hay ventas ni movimientos. ¿Seguro que deseas hacer el corte de caja en cero?')) return;
-        }
-
+    function ejecutarCierreCorte() {
         const movs = getMovimientosTotales();
         const fondo   = parseFloat(document.getElementById('fondo-inicial').value) || 0;
         const contado = parseFloat(document.getElementById('efectivo-contado').value) || 0;
@@ -903,18 +911,29 @@
             btn.disabled = false;
             if (data.success) {
                 buildTicket(payload);
-                alert(`✅ Corte #${data.corte_id} guardado.\n\nSe procederá a imprimir el ticket.`);
-                imprimirCorte();
+                showAlert(`Corte #${data.corte_id} guardado con éxito.\nSe procederá a imprimir el ticket.`, 'success', '¡Corte de Caja Guardado!').then(() => {
+                    imprimirCorte();
+                });
             } else {
-                alert('Error al guardar: ' + data.message);
+                showAlert('Error al guardar: ' + (data.message || ''), 'error', 'Error al Guardar');
             }
         })
         .catch(err => {
             btn.textContent = '✔ Cerrar';
             btn.disabled = false;
             console.error(err);
-            alert('Error de conexión.');
+            showAlert('No se pudo conectar con el servidor. Verifique la conexión.', 'error', 'Error de Conexión');
         });
+    }
+
+    document.getElementById('btn-cerrar-corte').addEventListener('click', () => {
+        if (!ventasData.ventas.length && (!ventasData.movimientos || !ventasData.movimientos.length)) {
+            showConfirm('Corte en Cero', 'No hay ventas ni movimientos registrados en este periodo. ¿Seguro que deseas realizar el corte de caja en cero?', () => {
+                ejecutarCierreCorte();
+            });
+            return;
+        }
+        ejecutarCierreCorte();
     });
 
     // ── Build ticket ──────────────────────────────────────────────────────

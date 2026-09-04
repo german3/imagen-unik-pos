@@ -6,7 +6,7 @@ $host    = trim(getenv('DB_HOST') ?: '127.0.0.1');
 $port    = trim(getenv('DB_PORT') ?: '3306');
 $db      = trim(getenv('DB_NAME') ?: 'imagen_unik_pos');
 $user    = trim(getenv('DB_USER') ?: 'root');
-$pass    = trim(getenv('DB_PASS') ?: '');
+$pass    = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 $charset = 'utf8mb4';
 
 if (strpos($host, ':') !== false) {
@@ -199,6 +199,12 @@ try {
      $cols_c = $pdo->query("DESCRIBE clientes")->fetchAll(PDO::FETCH_COLUMN);
      if (!in_array('documento', $cols_c)) {
          $pdo->exec("ALTER TABLE clientes ADD COLUMN documento VARCHAR(255) NULL");
+     }
+
+     // Auto-migrate: add observaciones to cotizaciones if it doesn't exist
+     $cols_cot = $pdo->query("DESCRIBE cotizaciones")->fetchAll(PDO::FETCH_COLUMN);
+     if (!in_array('observaciones', $cols_cot)) {
+         $pdo->exec("ALTER TABLE cotizaciones ADD COLUMN observaciones TEXT NULL");
      }
 
      // ── Folio Global (contador compartido entre ventas y cotizaciones) ──────

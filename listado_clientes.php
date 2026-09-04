@@ -211,19 +211,10 @@
         </div>
     </div>
 
-    <div id="toast"></div>
-
+    <script src="js/notifications.js"></script>
     <script>
         let allClients = [];
         let deleteTarget = null;
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = type;
-            t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 3500);
-        }
 
         function loadClients() {
             fetch('api/get_clients.php')

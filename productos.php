@@ -233,16 +233,8 @@
         </div>
     </div>
 
-    <div id="toast"></div>
-
+    <script src="js/notifications.js"></script>
     <script>
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = type;
-            t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 3500);
-        }
 
         const costInput  = document.getElementById('costo');
         const utilInput  = document.getElementById('utilidad');
@@ -336,7 +328,7 @@
                     showToast('❌ Error: ' + res.message, 'error');
                 }
             })
-            .catch(() => showToast('❌ Error de conexión.', 'error'));
+            .catch(() => showToast('Error de conexión con el servidor.', 'error'));
         });
     </script>
 </body>

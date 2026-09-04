@@ -223,17 +223,8 @@
         </div>
     </div>
 
-    <div id="toast"></div>
-
+    <script src="js/notifications.js"></script>
     <script>
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = type;
-            t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 3500);
-        }
-
         document.getElementById('clientForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const formData = new FormData(this);
@@ -245,13 +236,13 @@
             .then(res => res.json())
             .then(res => {
                 if(res.success) {
-                    showToast('✅ ' + res.message, 'success');
+                    showToast(res.message || 'Cliente registrado con éxito', 'success');
                     this.reset();
                 } else {
-                    showToast('❌ Error: ' + res.message, 'error');
+                    showToast(res.message || 'Error al guardar cliente', 'error');
                 }
             })
-            .catch(() => showToast('❌ Error de conexión.', 'error'));
+            .catch(() => showToast('Error de conexión con el servidor.', 'error'));
         });
     </script>
 </body>

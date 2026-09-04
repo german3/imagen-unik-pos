@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS cotizaciones (
     descuento_total DECIMAL(10,2) DEFAULT 0,
     iva DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
+    observaciones TEXT NULL,
     folio INT NULL UNIQUE,
     FOREIGN KEY (cliente_id) REFERENCES clientes(id)
 );

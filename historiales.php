@@ -281,10 +281,9 @@
         </div>
     </div>
 
-    <div id="toast"></div>
-
     <!-- html2pdf -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="js/notifications.js"></script>
     <script>
         // ── State ──────────────────────────────────────────────────────────
         let currentTab = 'all';
@@ -431,12 +430,6 @@
                 html2canvas: { scale: 2 },
                 jsPDF:     { unit: 'mm', format: 'a4', orientation: 'portrait' }
             }).from(element).save();
-        }
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg; t.className = type; t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 3500);
         }
 
         // Close on ESC or overlay click

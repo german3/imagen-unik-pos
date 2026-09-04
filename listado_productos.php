@@ -223,19 +223,10 @@
         </div>
     </div>
 
-    <div id="toast"></div>
-
+    <script src="js/notifications.js"></script>
     <script>
         let allProducts = [];
         let deleteTarget = null;
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = type;
-            t.style.display = 'block';
-            setTimeout(() => { t.style.display = 'none'; }, 3500);
-        }
 
         function loadProducts() {
             fetch('api/get_products.php')

@@ -454,7 +454,7 @@ function requestDeleteAuthorization(tr) {
         if (pwd !== null && pwd.trim().toLowerCase() === 'licenciado') {
             performRowDelete(tr);
         } else if (pwd !== null) {
-            alert('❌ Contraseña incorrecta. No tiene autorización para eliminar este registro.');
+            showAlert('Contraseña incorrecta. No tiene autorización para eliminar este registro.', 'error', 'Acceso Denegado');
         }
     }
 }
@@ -623,26 +623,75 @@ function buildPayload(extraFields = {}) {
 
 // ── Open the confirm-sale modal (for "Confirmar" button) ─────────────────────
 function confirmTransaction(endpoint, successMessage) {
-    // For quotation endpoint, send directly without modal
-    if (endpoint !== 'api/save_sale.php') {
-        const payload = buildPayload();
-        if (!payload) { alert('Agregue al menos un producto a la tabla.'); return; }
-        fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) { alert(successMessage); window.location.reload(); }
-            else alert('Error: ' + data.message);
-        })
-        .catch(() => alert('Error de conexión.'));
+    // For quotation endpoint, open observations modal
+    if (endpoint === 'api/save_quote.php') {
+        openQuoteObsModal();
         return;
     }
 
     // For sales: open the modal
     openConfirmSaleModal();
+}
+
+// Stores pending payload while quote observations modal is open
+let _pendingQuotePayload = null;
+
+function openQuoteObsModal() {
+    const payload = buildPayload();
+    if (!payload) {
+        showAlert('Agregue al menos un producto a la tabla de venta.', 'warning', 'Atención');
+        return;
+    }
+    _pendingQuotePayload = payload;
+
+    const modal = document.getElementById('quote-obs-modal-overlay');
+    const input = document.getElementById('quote-obs-text');
+    if (input) input.value = '';
+    if (modal) {
+        modal.style.display = 'flex';
+        setTimeout(() => input && input.focus(), 50);
+    }
+}
+
+function closeQuoteObsModal() {
+    const modal = document.getElementById('quote-obs-modal-overlay');
+    if (modal) modal.style.display = 'none';
+    _pendingQuotePayload = null;
+}
+
+function confirmSaveQuoteWithObs() {
+    if (!_pendingQuotePayload) return;
+
+    const input = document.getElementById('quote-obs-text');
+    const rawVal = input ? input.value.trim() : '';
+    const obs = rawVal !== '' ? rawVal : 'Sin observaciones adicionales';
+
+    _pendingQuotePayload.observaciones = obs;
+
+    const btnConfirm = document.getElementById('btn-confirm-quote-obs');
+    if (btnConfirm) btnConfirm.disabled = true;
+
+    fetch('api/save_quote.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(_pendingQuotePayload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (btnConfirm) btnConfirm.disabled = false;
+        if (data.success) {
+            closeQuoteObsModal();
+            showAlert('Cotización guardada en el historial con éxito.', 'success', '¡Cotización Guardada!').then(() => {
+                window.location.reload();
+            });
+        } else {
+            showAlert(data.message || 'No se pudo guardar la cotización.', 'error', 'Error al Guardar');
+        }
+    })
+    .catch(() => {
+        if (btnConfirm) btnConfirm.disabled = false;
+        showAlert('No se pudo conectar con el servidor. Verifique la conexión.', 'error', 'Error de Conexión');
+    });
 }
 
 // Stores pending payload while modal is open
@@ -651,7 +700,7 @@ let _pendingPayload = null;
 function openConfirmSaleModal() {
     const payload = buildPayload();
     if (!payload) {
-        alert('Agregue al menos un producto a la tabla.');
+        showAlert('Agregue al menos un producto a la tabla de venta.', 'warning', 'Atención');
         return;
     }
     _pendingPayload = payload;
@@ -725,16 +774,18 @@ function processSale() {
         btn.textContent = '✅ Confirmar Venta';
         if (data.success) {
             closeConfirmSaleModal();
-            window.location.reload();
+            showAlert('Venta registrada exitosamente.', 'success', '¡Venta Realizada!').then(() => {
+                window.location.reload();
+            });
         } else {
-            alert('Error al guardar la venta: ' + data.message);
+            showAlert('Error al guardar la venta: ' + (data.message || ''), 'error', 'Error en la Venta');
         }
     })
     .catch(err => {
         btn.disabled = false;
         btn.textContent = '✅ Confirmar Venta';
         console.error(err);
-        alert('Error de conexión.');
+        showAlert('No se pudo conectar con el servidor. Verifique la conexión.', 'error', 'Error de Conexión');
     });
 }
 
