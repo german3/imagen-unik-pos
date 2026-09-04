@@ -82,6 +82,10 @@ try {
         descuento_total DECIMAL(10,2) DEFAULT 0,
         iva DECIMAL(10,2) NOT NULL,
         total DECIMAL(10,2) NOT NULL,
+        estatus VARCHAR(20) NOT NULL DEFAULT 'confirmada',
+        motivo_cancelacion TEXT NULL,
+        metodo_pago VARCHAR(50) NULL DEFAULT 'efectivo',
+        folio INT NULL,
         FOREIGN KEY (cliente_id) REFERENCES clientes(id)
      )");
 
@@ -109,7 +113,10 @@ try {
         subtotal DECIMAL(10,2) NOT NULL,
         descuento_total DECIMAL(10,2) DEFAULT 0,
         iva DECIMAL(10,2) NOT NULL,
-        total DECIMAL(10,2) NOT NULL
+        total DECIMAL(10,2) NOT NULL,
+        observaciones TEXT NULL,
+        folio INT NULL,
+        FOREIGN KEY (cliente_id) REFERENCES clientes(id)
      )");
      $pdo->exec("CREATE TABLE IF NOT EXISTS cotizaciones_detalle (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -230,13 +237,23 @@ try {
      // 2. Columna folio en ventas
      $cols_v2 = $pdo->query("DESCRIBE ventas")->fetchAll(PDO::FETCH_COLUMN);
      if (!in_array('folio', $cols_v2)) {
-         $pdo->exec("ALTER TABLE ventas ADD COLUMN folio INT NULL UNIQUE");
+         $pdo->exec("ALTER TABLE ventas ADD COLUMN folio INT NULL");
+         try {
+             $pdo->exec("ALTER TABLE ventas ADD UNIQUE KEY (folio)");
+         } catch (\Exception $e) {
+             // Ignorar si el índice ya existe
+         }
      }
 
      // 3. Columna folio en cotizaciones
      $cols_c2 = $pdo->query("DESCRIBE cotizaciones")->fetchAll(PDO::FETCH_COLUMN);
      if (!in_array('folio', $cols_c2)) {
-         $pdo->exec("ALTER TABLE cotizaciones ADD COLUMN folio INT NULL UNIQUE");
+         $pdo->exec("ALTER TABLE cotizaciones ADD COLUMN folio INT NULL");
+         try {
+             $pdo->exec("ALTER TABLE cotizaciones ADD UNIQUE KEY (folio)");
+         } catch (\Exception $e) {
+             // Ignorar si el índice ya existe
+         }
      }
 
      // 4. Back-fill: asignar folios consecutivos a los registros existentes sin folio,
